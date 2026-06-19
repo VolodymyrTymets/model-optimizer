@@ -7,24 +7,8 @@ from src.model_validator.mode_validator import ModeValidator
 from src.model_builder.mode_builder import ModeBuilder
 from src.experiment.experiment import Experiment
 from src.utils.logger.logger_service import Logger
+from src.database.db_client import DBClient
 
-
-experiment = Experiment(
-    logger=Logger('Experiment'),
-    model_builder=ModeBuilder(logger=Logger('ModeBuilder')),
-    mode_trainer=ModeTrainer(logger=Logger('ModeTrainer')),
-    mode_validator=ModeValidator(logger=Logger('ModeValidator')),
-    details=ExperimentDetails(
-      epochs=10,
-      batch_size=32,
-      layers = [LayerType.Dense, LayerType.Dense, LayerType.Dense],
-      activation = [ActivationType.ReLU, ActivationType.Sigmoid],
-      units_range = [8, 128],
-      optimizer = [OptimizerType.Adam, OptimizerType.AdamW],
-      regularizer = [RegularizerType.L1, RegularizerType.L2],
-      loss = [LossType.MSE, LossType.BinaryCrossentropy],
-    )
-  )
 
 def main():
   # todo: add data-set import
@@ -32,6 +16,25 @@ def main():
   # todo: implement model building
   # todo: implement model validation
   # todo: implement the experiment pipline
+  db_client = DBClient()
+  db_client.create_database()
+
+  experiment = Experiment(
+      logger=Logger('Experiment'),
+      model_builder=ModeBuilder(logger=Logger('ModeBuilder')),
+      mode_trainer=ModeTrainer(logger=Logger('ModeTrainer')),
+      mode_validator=ModeValidator(logger=Logger('ModeValidator')),
+      details=ExperimentDetails(
+          epochs=10,
+          batch_size=32,
+          layers=[LayerType.Dense, LayerType.Dense, LayerType.Dense],
+          activation=[ActivationType.ReLU, ActivationType.Sigmoid],
+          units_range=[8, 128],
+          optimizer=[OptimizerType.Adam, OptimizerType.AdamW],
+          regularizer=[RegularizerType.L1, RegularizerType.L2],
+          loss=[LossType.MSE, LossType.BinaryCrossentropy],
+      )
+  )
 
   experiment.run(test_data=None, train_data=None)
 
