@@ -15,3 +15,4 @@ labels = ['noise', 'stimulation', 'breath']
 EPOCHS = 100
 labels_colors = ['blue', 'red', 'green']
 sub_sets = ['train', 'test']
+

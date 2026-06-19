@@ -1,8 +1,8 @@
 import numpy as np
 import uuid
-from src.logger.logger_service import Logger
-from src.data_set.data_set_file_worker import DataSetFileWorker
-from src.audio_features.audio_features import TimeDomainFeatures, FrequencyDomainFeatures
+from src.utils.logger.logger_service import Logger
+from src.utils.data_set.data_set_file_worker import DataSetFileWorker
+from src.utils.audio_features.audio_features import TimeDomainFeatures, FrequencyDomainFeatures
 
 # on how much (in percent) amplitude should be upper silence to determinate start of fragment
 MIN_FRAGMENT_LENGTH = 0.005

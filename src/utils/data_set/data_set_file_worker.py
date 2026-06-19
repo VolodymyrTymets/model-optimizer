@@ -1,9 +1,9 @@
 import uuid
 
 import numpy as np
-from src.files import Files
-from src.wav_files import WavFiles
-from src.logger.logger_service import Logger
+from src.utils.files import Files
+from src.utils.wav_files import WavFiles
+from src.utils.logger.logger_service import Logger
 from src.definitions import ASSETS_PATH
 
 class DataSetFileWorker:

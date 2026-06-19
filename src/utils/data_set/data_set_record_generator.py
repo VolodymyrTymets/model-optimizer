@@ -4,8 +4,8 @@ import json
 import numpy as np
 from charset_normalizer.md import annotations
 
-from src.audio_features.types import ArgumentationTypes
-from src.data_set.data_set_file_worker import DataSetFileWorker
+from src.utils.audio_features.types import ArgumentationTypes
+from src.utils.data_set.data_set_file_worker import DataSetFileWorker
 
 from src.definitions import sr as SR, frame_length, hop_length, labels
 

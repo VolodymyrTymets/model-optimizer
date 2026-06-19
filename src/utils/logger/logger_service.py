@@ -1,7 +1,9 @@
 from termcolor import colored
 
+from src.utils.logger.logger_interface import ILogger
 
-class Logger:
+
+class Logger(ILogger):
   def __init__(self, module_name: str):
     self.module_name = module_name
 
