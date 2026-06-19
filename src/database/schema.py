@@ -15,9 +15,16 @@ class Base(DeclarativeBase):
 class ExperimentModel(Base):
      __tablename__ = "experiment"
 
-     details: Mapped[List["ExperimentDetailsModel"]] = relationship(back_populates="experiment_details")
-     steps: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="experiment_step")
      endAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+
+     details: Mapped["ExperimentDetailsModel"] = relationship(back_populates="experiment")
+     steps: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="experiment")
+     model_schemas: Mapped[List["ModelSchemaModel"]] = relationship(back_populates="experiment")
+     model_layers: Mapped[List["ModelLayerModel"]] = relationship(back_populates="experiment")
+
+     def __repr__(self) -> str:
+         return f"<ExperimentModel(id={self.id!r}), endAt={self.endAt!r}>"
+
 
 class ExperimentDetailsModel(Base):
     __tablename__ = "experiment_details"
@@ -32,6 +39,11 @@ class ExperimentDetailsModel(Base):
     batch_size: Mapped[int] = mapped_column(sa.Integer)
     units_range: Mapped[str] = mapped_column(sa.String)
 
+    experiment: Mapped["ExperimentModel"] = relationship(back_populates="details")
+
+    def __repr__(self):
+        return f"ExperimentDetailsModel(epochs={int(self.epochs)}, batch_size={int(self.batch_size)}, layers={self.layers}, activation={self.activation}, optimizer={self.optimizer}, regularizer={self.regularizer}, loss={self.loss}, units_range={self.units_range})"
+
 class ExperimentStepModel(Base):
     __tablename__ = "experiment_step"
 
@@ -39,7 +51,9 @@ class ExperimentStepModel(Base):
     experiment_id: Mapped[int] = mapped_column(ForeignKey("experiment.id"))
     endAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), nullable=True)
     type: Mapped[str] = mapped_column(sa.String)
-    schema: Mapped["ModelSchemaModel"] = relationship(back_populates="model_schema")
+
+    schema: Mapped["ModelSchemaModel"] = relationship(back_populates="step")
+    experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")
 
 
 class ExperimentRelatedStepsMode(Base):
@@ -56,6 +70,12 @@ class ModelSchemaModel(Base):
     loss: Mapped[str] = mapped_column(sa.String)
     model_layers: Mapped[List["ModelLayerModel"]] = relationship(back_populates="model_schema")
 
+    step: Mapped["ExperimentStepModel"] = relationship(back_populates="schema")
+    experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_schemas")
+
+    def __repr__(self):
+        return f"<ModelSchemaModel(id={self.id}, optimizer={self.optimizer}, loss={self.loss})>"
+
 class ModelLayerModel(Base):
     __tablename__ = "model_layer"
     experiment_id: Mapped[int] = mapped_column(ForeignKey("experiment.id"))
@@ -65,3 +85,6 @@ class ModelLayerModel(Base):
     units: Mapped[int] = mapped_column(sa.Integer)
     activation: Mapped[str] = mapped_column(sa.String)
     regularizer: Mapped[str] = mapped_column(sa.String)
+
+    experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_layers")
+    model_schema: Mapped["ModelSchemaModel"] = relationship(back_populates="model_layers")

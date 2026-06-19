@@ -25,9 +25,9 @@ def main():
       mode_trainer=ModeTrainer(logger=Logger('ModeTrainer')),
       mode_validator=ModeValidator(logger=Logger('ModeValidator')),
       details=ExperimentDetails(
-          epochs=10,
+          epochs=100,
           batch_size=32,
-          layers=[LayerType.Dense, LayerType.Dense, LayerType.Dense],
+          layers=[LayerType.Dense, LayerType.Conv, LayerType.GRU],
           activation=[ActivationType.ReLU, ActivationType.Sigmoid],
           units_range=[8, 128],
           optimizer=[OptimizerType.Adam, OptimizerType.AdamW],

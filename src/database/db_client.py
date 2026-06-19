@@ -38,6 +38,7 @@ class DBClient:
         self._database_url = database_url
         self._engine: Engine = create_engine(database_url)
         self._session_factory = sessionmaker(bind=self._engine, expire_on_commit=False)
+        Base.registry.configure()
 
     @property
     def engine(self) -> Engine:
