@@ -13,7 +13,7 @@ class ExperimentModelService:
         self.db_client = DBClient()
 
     def _create(self, experiment_details: IExperimentDetails):
-        self._logger.log("Creating new experiment...")
+        self._logger.log("Creating new experiment...", color="green")
         with self.db_client.session_scope() as session:
             details = ExperimentDetailsModel(
                 layers=','.join(x.value for x in experiment_details.layers),
@@ -33,6 +33,7 @@ class ExperimentModelService:
             return new_experiment
 
     def finish_experiment(self, experiment_id: int):
+        self._logger.log("Finishing experiment...", color="green")
         with self.db_client.session_scope() as session:
             session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).update(
                 {DBExperimentModel.endAt: datetime.datetime.now()})

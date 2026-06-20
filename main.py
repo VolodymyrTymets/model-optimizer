@@ -13,8 +13,8 @@ from src.database.db_client import DBClient
 def main():
   # todo: add data-set import
   # todo: add SQLAlchemy to log the progress of the experiment
-  # todo: implement model building
-  # todo: implement model validation
+  # todo: implement models building
+  # todo: implement models validation
   # todo: implement the experiment pipline
   db_client = DBClient()
   db_client.create_database()

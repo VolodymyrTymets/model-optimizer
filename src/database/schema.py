@@ -50,16 +50,20 @@ class ExperimentStepModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     experiment_id: Mapped[int] = mapped_column(ForeignKey("experiment.id"))
     endAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), nullable=True)
-    type: Mapped[str] = mapped_column(sa.String)
+    step: Mapped[int] = mapped_column(sa.Integer)
+    fingerprint: Mapped[str] = mapped_column(sa.String)
+    record_accuracy: Mapped[float] = mapped_column(sa.Float, default=0)
+    validation_accuracy: Mapped[float] = mapped_column(sa.Float, default=0)
+    accuracy_delta: Mapped[float] = mapped_column(sa.Float, default=0)
 
     schema: Mapped["ModelSchemaModel"] = relationship(back_populates="step")
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")
 
 
-class ExperimentRelatedStepsMode(Base):
-    __tablename__ = "experiment_related_steps"
-    step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
-    related_step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
+# class ExperimentRelatedStepsMode(Base):
+#     __tablename__ = "experiment_related_steps"
+#     step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
+#     related_step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
 
 class ModelSchemaModel(Base):
     __tablename__ = "model_schema"

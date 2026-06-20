@@ -1,3 +1,5 @@
+import time
+
 import tensorflow as tf
 
 from src.utils.logger.logger_interface import ILogger
@@ -10,5 +12,6 @@ class ModeTrainer(IModeTrainer):
 
     def train(self, model: tf.keras.Model, data: tf.data.Dataset) -> tf.keras.Model:
         self._logger.log("Training started")
-        ## todo: implement
+        time.sleep(0.5)  # simulate training process
+        self._logger.log("Training finished")
         return model

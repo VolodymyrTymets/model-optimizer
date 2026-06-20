@@ -1,3 +1,5 @@
+import random
+
 import tensorflow as tf
 
 from src.utils.logger.logger_interface import ILogger
@@ -10,6 +12,6 @@ class ModeValidator(IModeValidator):
 
     def validate(self, model: tf.keras.Model, data: tf.data.Dataset) -> tuple[float, float]:
         self._logger.log("Validation started")
-        ## todo: implement
-        self._logger.log("Validation finished: 0, 0")
-        return [0, 0]
+        record_acc, validation_acc = random.randint(1, 100), random.randint(1, 100)  # simulate validation process
+        self._logger.log(f"Validation finished: {record_acc}, {validation_acc}")
+        return record_acc, validation_acc

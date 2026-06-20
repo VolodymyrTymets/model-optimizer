@@ -21,6 +21,10 @@ class ModeBuilder(ABC):
         activation = self._get_activation(layer.activation)
         if layer.type.value == LayerType.Dense.value:
             return tf.keras.layers.Dense(units=layer.units, activation=activation)
+        if layer.type.value == LayerType.Conv.value:
+            return tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation)
+        if layer.type.value == LayerType.GRU.value:
+            return tf.keras.layers.GRU(units=layer.units, activation=activation)
         else:
             raise ValueError(f"Unsupported layer type: {layer.type}")
 
@@ -32,5 +36,5 @@ class ModeBuilder(ABC):
         self._logger.log(f"Optimizer: {schema.optimizer.value}", color="blue")
         self._logger.log(f"Loss: {schema.loss.value}", color="blue")
         # todo: implement
-        model.build(input_shape=(None, 1))
+        #model.build(input_shape=(None, 1))
         return model
