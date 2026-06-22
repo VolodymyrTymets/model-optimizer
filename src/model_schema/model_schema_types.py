@@ -1,6 +1,6 @@
 from abc import ABC
 from enum import Enum
-from typing import Sequence
+from typing import Sequence, Optional
 
 
 class LayerType(Enum):
@@ -35,11 +35,10 @@ class ILayerSchema(ABC):
     type: LayerType
     units: int
     activation: ActivationType
-    regularizer: RegularizerType
-
+    regularizer: Optional[RegularizerType]
 
 class LayerSchema(ILayerSchema):
-    def __init__(self, type: LayerType, units: int, activation: ActivationType, regularizer: RegularizerType):
+    def __init__(self, type: LayerType, units: int, activation: ActivationType, regularizer: Optional[RegularizerType] = None):
         self.type = type
         self.units = units
         self.activation = activation

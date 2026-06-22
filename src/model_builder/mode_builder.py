@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
-
 import tensorflow as tf
+
+from src.model_builder.mode_builder_interface import IModeBuilder
 from src.model_schema.model_schema_types import IModelSchema, ActivationType, ILayerSchema, LayerType
 from src.utils.logger.logger_interface import ILogger
 
 
-class ModeBuilder(ABC):
+class ModeBuilder(IModeBuilder):
     def __init__(self, logger: ILogger):
         self._logger = logger
 

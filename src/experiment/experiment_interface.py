@@ -4,6 +4,6 @@ import tensorflow as tf
 
 
 class IExperiment(ABC):
-    @property
+    @abstractmethod
     def run(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> None:
         pass

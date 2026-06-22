@@ -1,5 +1,7 @@
 import datetime
 
+from sqlalchemy.orm import selectinload
+
 from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel
 from src.database.db_client import DBClient
 from src.model_schema.model_schema_types import IModelSchema
@@ -16,7 +18,7 @@ class ExperimentStepModelService:
         for layer in model_schema.layers:
             fingerprint += layer.type.value
             fingerprint += layer.activation.value
-            fingerprint += layer.regularizer.value
+            fingerprint += layer.regularizer.value if layer.regularizer is not None else ""
 
         fingerprint += model_schema.optimizer.value
         fingerprint += model_schema.loss.value
@@ -50,13 +52,14 @@ class ExperimentStepModelService:
                 type=x.type.value,
                 units=x.units,
                 activation=x.activation.value,
-                regularizer=x.regularizer.value,
+                regularizer=x.regularizer.value if x.regularizer is not None else None,
             ) for x in model_schema.layers])
 
             session.commit()
             return new_step
 
-    def finish_experiment_step(self, experiment_id: int, model_schema: IModelSchema, record_accuracy: float, validation_accuracy: float):
+    def finish_experiment_step(self, experiment_id: int, model_schema: IModelSchema, record_accuracy: float,
+                               validation_accuracy: float):
         self._logger.log("Finishing step...", color="green")
         current = self.find(experiment_id, model_schema)
         if current is None:
@@ -68,14 +71,22 @@ class ExperimentStepModelService:
                     ExperimentStepModel.record_accuracy: record_accuracy,
                     ExperimentStepModel.validation_accuracy: validation_accuracy,
                     ExperimentStepModel.accuracy_delta: (record_accuracy + validation_accuracy) / 2,
-                 })
+                })
             session.commit()
             return True
 
     def find(self, experiment_id: int, model_schema: IModelSchema):
         fingerprint = self._create_fingerprint(model_schema)
         with self.db_client.session_scope() as session:
-            latest = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).where(ExperimentStepModel.fingerprint == fingerprint).first()
+            latest = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).where(
+                ExperimentStepModel.fingerprint == fingerprint).first()
             return latest
 
-
+    def get_schema(self, step_id: int):
+        with self.db_client.session_scope() as session:
+            schema = session.query(ModelSchemaModel).filter(
+                ModelSchemaModel.experiment_step_id == step_id
+            ).options(
+                selectinload(ModelSchemaModel.model_layers)
+            ).first()
+            return schema

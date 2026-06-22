@@ -33,7 +33,7 @@ class ExperimentDetailsModel(Base):
     layers: Mapped[str] = mapped_column(sa.String)
     activation: Mapped[str] = mapped_column(sa.String)
     optimizer: Mapped[str] = mapped_column(sa.String)
-    regularizer: Mapped[str] = mapped_column(sa.String)
+    regularizer: Mapped[str] = mapped_column(sa.String, nullable=True)
     loss: Mapped[str] = mapped_column(sa.String)
     epochs: Mapped[int] = mapped_column(sa.Integer)
     batch_size: Mapped[int] = mapped_column(sa.Integer)
@@ -88,7 +88,7 @@ class ModelLayerModel(Base):
     type: Mapped[str] = mapped_column(sa.String)
     units: Mapped[int] = mapped_column(sa.Integer)
     activation: Mapped[str] = mapped_column(sa.String)
-    regularizer: Mapped[str] = mapped_column(sa.String)
+    regularizer: Mapped[str] = mapped_column(sa.String, nullable=True)
 
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_layers")
     model_schema: Mapped["ModelSchemaModel"] = relationship(back_populates="model_layers")
