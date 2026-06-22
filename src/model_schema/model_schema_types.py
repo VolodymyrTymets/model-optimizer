@@ -34,15 +34,18 @@ class LossType(Enum):
 class ILayerSchema(ABC):
     type: LayerType
     units: int
-    activation: ActivationType
+    activation: Optional[ActivationType]
     regularizer: Optional[RegularizerType]
 
 class LayerSchema(ILayerSchema):
-    def __init__(self, type: LayerType, units: int, activation: ActivationType, regularizer: Optional[RegularizerType] = None):
+    def __init__(self, type: LayerType, units: int, activation: Optional[ActivationType] = None, regularizer: Optional[RegularizerType] = None):
         self.type = type
         self.units = units
         self.activation = activation
         self.regularizer = regularizer
+
+    def __repr__(self) -> str:
+        return f"[{self.type.value!r}:{self.units!r},[a={self.activation!r},r={self.regularizer!r}]>"
 
 
 class IModelSchema(ABC):
@@ -56,3 +59,8 @@ class ModelSchema(IModelSchema):
         self.layers = layers
         self.optimizer = optimizer
         self.loss = loss
+
+    def __repr__(self) -> str:
+        return f"layers:[{','.join([str(x) for x in self.layers])!r}],optimizer={self.optimizer.value!r}, loss={self.loss.value!r})>"
+
+

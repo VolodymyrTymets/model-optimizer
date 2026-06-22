@@ -1,7 +1,7 @@
 import tensorflow as tf
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
 from src.experiment.experiment_types import IExperimentDetails
-from src.model_schema.model_schema_types import IModelSchema, ModelSchema
+from src.model_schema.model_schema_types import IModelSchema, ModelSchema, LayerSchema
 from src.model_tuner.layer_tuner.layer_tuner import LayerTuner
 from src.model_tuner.mode_tuner_interface import IModeTuner
 
@@ -28,12 +28,24 @@ class ModeTuner(IModeTuner):
 
         best_step = self._experiment_step.get_best_step(steps)
         best_schema = self._experiment_step.get_schema(best_step)
+        self._logger.log(
+            f"[rare_tuning] Best step [{best_step.record_accuracy}, {best_step.validation_accuracy}] - {best_step.step}, with id {best_step.id}",
+            color="green")
+        self._logger.log(f"schema: {str(best_schema)}", )
         return best_schema
 
     # second step: 2 layers, high units, sequential activations, regularization
-    def layers_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema,
-                      layer: int) -> IModelSchema:
-        self._logger.log(f"todo: Layer {layer} tuning started", color="yellow")
+    def layers_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema) -> IModelSchema:
+        self._logger.log(f"Layers tuning started", color="green")
+        schema.layers = []
+        self._logger.log(f"schema: {str(schema)}", )
+        for layer in self._details.layers:
+            self._logger.log(f"todo: Layer {layer} tuning started", color="yellow")
+            current_layer = self.layer_tuner.tuning(train_data, test_data, schema, LayerSchema(layer, 0))
+            schema.layers.append(current_layer)
+
+        self._logger.log(f"Layers tuning finished", color="green")
+        self._logger.log(f"schema: {str(schema)}", )
         return schema
 
     # third step: 3 ... todo: think about it, maybe argumentation, time, audio features

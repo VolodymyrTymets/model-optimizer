@@ -17,7 +17,8 @@ class ExperimentStepModelService:
         fingerprint = ""
         for layer in model_schema.layers:
             fingerprint += layer.type.value
-            fingerprint += layer.activation.value
+            fingerprint += str(layer.units)
+            fingerprint += layer.activation.value if layer.activation is not None else ""
             fingerprint += layer.regularizer.value if layer.regularizer is not None else ""
 
         fingerprint += model_schema.optimizer.value
@@ -51,7 +52,7 @@ class ExperimentStepModelService:
                 model_schema_id=schema.id,
                 type=x.type.value,
                 units=x.units,
-                activation=x.activation.value,
+                activation=x.activation.value if x.activation is not None else None,
                 regularizer=x.regularizer.value if x.regularizer is not None else None,
             ) for x in model_schema.layers])
 

@@ -11,8 +11,7 @@ class IModeTuner(ABC):
 
     # second step: 2 layers, high units, sequential activations, regularization
     @abstractmethod
-    def layers_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema,
-                      layer: int) -> IModelSchema:
+    def layers_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema) -> IModelSchema:
         pass
 
     # third step: 3 ... todo: think about it, maybe argumentation, time, audio features

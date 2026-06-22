@@ -87,7 +87,7 @@ class ModelLayerModel(Base):
     model_schema_id: Mapped[int] = mapped_column(ForeignKey("model_schema.id"))
     type: Mapped[str] = mapped_column(sa.String)
     units: Mapped[int] = mapped_column(sa.Integer)
-    activation: Mapped[str] = mapped_column(sa.String)
+    activation: Mapped[str] = mapped_column(sa.String, nullable=True)
     regularizer: Mapped[str] = mapped_column(sa.String, nullable=True)
 
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_layers")

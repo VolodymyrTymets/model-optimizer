@@ -11,7 +11,5 @@ class ModeTrainer(IModeTrainer):
         self._logger = logger
 
     def train(self, model: tf.keras.Model, data: tf.data.Dataset) -> tf.keras.Model:
-        self._logger.log("Training started")
         time.sleep(0.5)  # simulate training process
-        self._logger.log("Training finished")
         return model

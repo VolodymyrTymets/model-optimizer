@@ -25,7 +25,8 @@ class ExperimentStep(IExperimentStep):
         layers = []
         for layer in shema.model_layers:
             regularizer = RegularizerType(layer.regularizer) if layer.regularizer is not None else None
-            layers.append(LayerSchema(type=LayerType(layer.type), activation=ActivationType(layer.activation), regularizer=regularizer, units=layer.units))
+            activation = ActivationType(layer.activation) if layer.activation is not None else None
+            layers.append(LayerSchema(type=LayerType(layer.type), activation=activation, regularizer=regularizer, units=layer.units))
 
         return ModelSchema(layers=layers, optimizer=OptimizerType(shema.optimizer), loss=LossType(shema.loss))
 
@@ -49,4 +50,4 @@ class ExperimentStep(IExperimentStep):
         self._experiment_step_model_service.finish_experiment_step(self.experiment_id,
                                                                    schema, record_acc,
                                                                    valid_acc)
-        return existed_step
+        return self._experiment_step_model_service.find(self.experiment_id, schema)
