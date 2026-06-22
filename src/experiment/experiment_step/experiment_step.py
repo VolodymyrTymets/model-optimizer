@@ -35,7 +35,7 @@ class ExperimentStep(IExperimentStep):
 
     def run(self, schema: IModelSchema, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> ExperimentStepModel:
         existed_step = self._experiment_step_model_service.find(self.experiment_id, schema)
-        step = existed_step.step + 1 if existed_step is not None else 1
+        step = self._experiment_step_model_service.get_last_step(self.experiment_id) + 1
         self._logger.log(f"[{step}]Experiment step started", color="blue")
         if existed_step is not None:
             self._logger.log(f"[{step}]Experiment step already exists", color="yellow")

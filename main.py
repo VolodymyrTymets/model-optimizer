@@ -18,7 +18,7 @@ def main():
       details=ExperimentDetails(
           epochs=100,
           batch_size=32,
-          layers=[LayerType.Dense, LayerType.Conv, LayerType.GRU],
+          layers=[LayerType.Conv, LayerType.GRU, LayerType.Dense,],
           activation=[ActivationType.ReLU, ActivationType.Sigmoid],
           units_range=[8, 256],
           optimizer=[OptimizerType.Adam, OptimizerType.AdamW],

@@ -91,3 +91,9 @@ class ExperimentStepModelService:
                 selectinload(ModelSchemaModel.model_layers)
             ).first()
             return schema
+
+    def get_last_step(self, experiment_id: int):
+        with self.db_client.session_scope() as session:
+            latest = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).order_by(
+                ExperimentStepModel.step.desc()).first()
+            return latest.step if latest is not None else 1

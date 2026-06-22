@@ -60,11 +60,6 @@ class ExperimentStepModel(Base):
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")
 
 
-# class ExperimentRelatedStepsMode(Base):
-#     __tablename__ = "experiment_related_steps"
-#     step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
-#     related_step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
-
 class ModelSchemaModel(Base):
     __tablename__ = "model_schema"
 
