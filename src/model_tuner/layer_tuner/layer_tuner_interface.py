@@ -6,9 +6,9 @@ from src.model_schema.model_schema_types import ILayerSchema, IModelSchema
 
 class ILayerTuner(ABC):
     @abstractmethod
-    def rare_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> list[ILayerSchema]:
+    def rare_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> list[ILayerSchema]:
         pass
 
     @abstractmethod
-    def tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset, schema: IModelSchema, current_layer: ILayerSchema) -> ILayerSchema:
+    def tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema, current_layer: ILayerSchema) -> ILayerSchema:
         pass

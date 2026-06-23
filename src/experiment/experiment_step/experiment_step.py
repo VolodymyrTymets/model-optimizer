@@ -33,7 +33,8 @@ class ExperimentStep(IExperimentStep):
     def get_best_step(self, steps: list[ExperimentStepModel]) -> ExperimentStepModel:
         return max(steps, key=lambda x: x.record_accuracy)
 
-    def run(self, schema: IModelSchema, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> ExperimentStepModel:
+    def run(self, schema: IModelSchema, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> ExperimentStepModel:
+        train_ds, val_ds, test_ds = data_sets
         existed_step = self._experiment_step_model_service.find(self.experiment_id, schema)
         step = self._experiment_step_model_service.get_last_step(self.experiment_id) + 1
         self._logger.log(f"[{step}]Experiment step started", color="blue")
