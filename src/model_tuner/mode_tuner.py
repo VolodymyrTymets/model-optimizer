@@ -16,14 +16,14 @@ class ModeTuner(IModeTuner):
         self.layer_tuner = LayerTuner(details, experiment_step)
 
     # first step: 1 layer, low units, sequential optimizer, loses
-    def rare_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],) -> IModelSchema:
+    def rare_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> IModelSchema:
         layers = self.layer_tuner.rare_tuning(data_sets)
 
         steps = []
         for optimizer in self._details.optimizer:
             for loss in self._details.loss:
                 schema = ModelSchema(layers=layers, optimizer=optimizer, loss=loss)
-                step = self._experiment_step.run(schema, data_sets)
+                step = self._experiment_step.run(schema, data_sets, epochs=self._details.epochs)
                 steps.append(step)
 
         best_step = self._experiment_step.get_best_step(steps)

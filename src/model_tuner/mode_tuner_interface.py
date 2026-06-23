@@ -6,8 +6,7 @@ from src.model_schema.model_schema_types import IModelSchema
 class IModeTuner(ABC):
     # first step: 1 layer, low units, sequential optimizer, loses
     @abstractmethod
-    def rare_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset,
-                    test_ds: tf.data.Dataset, ) -> IModelSchema:
+    def rare_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> IModelSchema:
         pass
 
     # second step: 2 layers, high units, sequential activations, regularization

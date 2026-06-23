@@ -1,5 +1,5 @@
 import datetime
-
+import tensorflow as tf
 from sqlalchemy.orm import selectinload
 
 from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel
@@ -60,7 +60,7 @@ class ExperimentStepModelService:
             return new_step
 
     def finish_experiment_step(self, experiment_id: int, model_schema: IModelSchema, record_accuracy: float,
-                               validation_accuracy: float):
+                               validation_accuracy: float, history: tf.keras.callbacks.History):
         self._logger.log("Finishing step...", color="green")
         current = self.find(experiment_id, model_schema)
         if current is None:
@@ -72,6 +72,7 @@ class ExperimentStepModelService:
                     ExperimentStepModel.record_accuracy: record_accuracy,
                     ExperimentStepModel.validation_accuracy: validation_accuracy,
                     ExperimentStepModel.accuracy_delta: (record_accuracy + validation_accuracy) / 2,
+                    ExperimentStepModel.epochs: len(history.history['loss']),
                 })
             session.commit()
             return True

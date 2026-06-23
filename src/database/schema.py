@@ -55,6 +55,7 @@ class ExperimentStepModel(Base):
     record_accuracy: Mapped[float] = mapped_column(sa.Float, default=0)
     validation_accuracy: Mapped[float] = mapped_column(sa.Float, default=0)
     accuracy_delta: Mapped[float] = mapped_column(sa.Float, default=0)
+    epochs: Mapped[int] = mapped_column(sa.Integer, default=0)
 
     schema: Mapped["ModelSchemaModel"] = relationship(back_populates="step")
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")

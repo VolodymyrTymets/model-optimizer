@@ -1,8 +1,9 @@
 import tensorflow as tf
-from tensorflow.python.data.ops.optional_ops import Optional
 
+from src.definitions import EMULATE_MODE, labels
 from src.model_builder.mode_builder_interface import IModeBuilder
-from src.model_schema.model_schema_types import IModelSchema, ActivationType, ILayerSchema, LayerType
+from src.model_schema.model_schema_types import IModelSchema, ActivationType, ILayerSchema, LayerType, OptimizerType, \
+    LossType
 from src.utils.logger.logger_interface import ILogger
 
 
@@ -10,7 +11,7 @@ class ModeBuilder(IModeBuilder):
     def __init__(self, logger: ILogger):
         self._logger = logger
 
-    def  _get_activation(self, activation: ActivationType):
+    def _get_activation(self, activation: ActivationType):
         if activation is None:
             return None
         if activation.value == ActivationType.ReLU.value:
@@ -19,22 +20,64 @@ class ModeBuilder(IModeBuilder):
             return tf.nn.sigmoid
         return None
 
-    def  _build_layer(self, layer: ILayerSchema):
+    def _build_layer(self, layer: ILayerSchema):
         activation = self._get_activation(layer.activation)
         if layer.type.value == LayerType.Dense.value:
-            return tf.keras.layers.Dense(units=layer.units, activation=activation)
+            return [tf.keras.layers.Dense(units=layer.units, activation=activation)]
         if layer.type.value == LayerType.Conv.value:
-            return tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation)
+            return [tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation),
+                    tf.keras.layers.MaxPool2D()]
         if layer.type.value == LayerType.GRU.value:
-            return tf.keras.layers.GRU(units=layer.units, activation=activation)
+            return [tf.keras.layers.GRU(units=layer.units, activation=activation)]
         else:
             raise ValueError(f"Unsupported layer type: {layer.type}")
 
-    def build_model(self, schema: IModelSchema) -> tf.keras.Model:
+    def _get_optimizer(self, optimizer: OptimizerType, learning_rate=0.0001):
+        if optimizer.value == OptimizerType.Adam.value:
+            return tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        elif optimizer.value == OptimizerType.AdamW.value:
+            return tf.keras.optimizers.AdamW(learning_rate=learning_rate)
+        elif optimizer.value == OptimizerType.Rmsprop.value:
+            return tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+        else:
+            raise ValueError(f"Unsupported optimizer: {optimizer}")
+
+    def _get_loss(self, loss: LossType):
+        if loss.value == LossType.BinaryCrossentropy.value:
+            return tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+        if loss.value == LossType.SparseCategoricalCrossentropy.value:
+            return tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        else:
+            raise ValueError(f"Unsupported loss: {loss}")
+
+    def build_model(self, schema: IModelSchema, train_ds: tf.data.Dataset) -> tf.keras.Model:
         self._logger.log(f"Building model schema: {str(schema)}", color="yellow")
+        if EMULATE_MODE:
+            return tf.keras.Sequential()
+
+        input_shape = None
+        for example, example_spect_labels in train_ds.take(1):
+            input_shape = example.shape[1:]
+
+        norm_layer = tf.keras.layers.Normalization(name='normalization')
+        norm_layer.adapt(data=train_ds.map(
+            map_func=lambda spec, label: spec))
+
         model = tf.keras.Sequential()
+        model.add(tf.keras.layers.Input(shape=input_shape))
+        model.add(norm_layer)
         for layer in schema.layers:
-            model.add(self._build_layer(layer))
-        # todo: implement
-        #model.build(input_shape=(None, 1))
+            for sublayer in self._build_layer(layer):
+                model.add(sublayer)
+            model.add(tf.keras.layers.Dropout(0.5))
+        model.add(tf.keras.layers.Flatten())
+        model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
+        model.get_layer('normalization').adapt(train_ds.map(lambda x, label: x))
+
+        model.compile(
+            optimizer=self._get_optimizer(schema.optimizer),
+            loss=self._get_loss(schema.loss),
+            metrics=['accuracy'],
+        )
+        model.summary()
         return model

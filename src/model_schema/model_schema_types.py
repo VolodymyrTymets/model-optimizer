@@ -27,7 +27,7 @@ class OptimizerType(Enum):
 
 
 class LossType(Enum):
-    MSE = 'MSE'
+    SparseCategoricalCrossentropy = 'SparseCategoricalCrossentropy'
     BinaryCrossentropy = 'BinaryCrossentropy'
 
 

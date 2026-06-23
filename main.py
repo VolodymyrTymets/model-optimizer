@@ -28,17 +28,17 @@ def main():
             units_range=[8, 256],
             optimizer=[OptimizerType.Adam, OptimizerType.AdamW],
             regularizer=[RegularizerType.L1, RegularizerType.L2],
-            loss=[LossType.MSE, LossType.BinaryCrossentropy],
+            loss=[LossType.SparseCategoricalCrossentropy],
         )
     )
     data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id())
-    data_set_cooker.prepare(duration=DURATION, argumentation_types=[ArgumentationTypes.normalization])
+    data_set_cooker.prepare(duration=DURATION, argumentation_types=[])
 
     data_set_importer = DataSetImporter(duration=DURATION, af_strategy=af_strategy)
     train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set(data_set_cooker.get_data_set_path())
 
     experiment.start((train_ds, val_ds, test_ds))
-    # experiment.finish()
+    experiment.finish()
 
 
 if __name__ == "__main__":

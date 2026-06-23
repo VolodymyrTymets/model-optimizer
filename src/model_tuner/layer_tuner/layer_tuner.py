@@ -43,7 +43,7 @@ class LayerTuner(ILayerTuner):
         for current_units in [low_units, high_units]:
             count_of_units = self._get_mid(current_units)
             schema.layers[-1].units = count_of_units
-            step = self._experiment_step.run(schema, data_sets)
+            step = self._experiment_step.run(schema, data_sets, self._details.epochs)
             steps.append(step)
 
         best_step = self._experiment_step.get_best_step(steps)
@@ -58,12 +58,12 @@ class LayerTuner(ILayerTuner):
             optimizer=schema.optimizer,
             loss=schema.loss,
         )
-        steps = [self._experiment_step.run(options_schema, data_sets)]
+        steps = [self._experiment_step.run(options_schema, data_sets, self._details.epochs)]
         for activation in self._details.activation:
             for regularizer in self._details.regularizer:
                 options_schema.layers[-1].activation = activation
                 options_schema.layers[-1].regularizer = regularizer
-                steps.append(self._experiment_step.run(options_schema, data_sets))
+                steps.append(self._experiment_step.run(options_schema, data_sets, self._details.epochs))
 
         best_step = self._experiment_step.get_best_step(steps)
         best_schema = self._experiment_step.get_schema(best_step)
