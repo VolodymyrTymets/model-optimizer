@@ -5,7 +5,7 @@ from src.model_schema.model_schema_types import IModelSchema
 
 class IExperiment(ABC):
     @abstractmethod
-    def start(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> IModelSchema:
+    def start(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> IModelSchema:
         pass
     @abstractmethod
     def finish(self):

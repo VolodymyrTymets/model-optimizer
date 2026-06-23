@@ -33,7 +33,7 @@ class ExperimentStep(IExperimentStep):
     def get_best_step(self, steps: list[ExperimentStepModel]) -> ExperimentStepModel:
         return max(steps, key=lambda x: x.record_accuracy)
 
-    def run(self, schema: IModelSchema, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> ExperimentStepModel:
+    def run(self, schema: IModelSchema, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> ExperimentStepModel:
         existed_step = self._experiment_step_model_service.find(self.experiment_id, schema)
         step = self._experiment_step_model_service.get_last_step(self.experiment_id) + 1
         self._logger.log(f"[{step}]Experiment step started", color="blue")
@@ -45,8 +45,8 @@ class ExperimentStep(IExperimentStep):
             existed_step = self._experiment_step_model_service.start_experiment_step(self.experiment_id,
                                                                                      step, schema)
         model = self._model_builder.build_model(schema)
-        model = self._mode_trainer.train(model, train_data)
-        record_acc, valid_acc = self._mode_validator.validate(model, test_data)
+        model = self._mode_trainer.train(model, train_ds, val_ds)
+        record_acc, valid_acc = self._mode_validator.validate(model, test_ds)
         self._experiment_step_model_service.finish_experiment_step(self.experiment_id,
                                                                    schema, record_acc,
                                                                    valid_acc)

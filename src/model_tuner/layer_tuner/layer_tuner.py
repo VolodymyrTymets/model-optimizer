@@ -33,7 +33,7 @@ class LayerTuner(ILayerTuner):
     def _get_mid(self, arr: list[int]):
         return arr[len(arr) // 2]
 
-    def _get_best_units(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema, units: list[int]) -> int:
+    def _get_best_units(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset, schema: IModelSchema, units: list[int]) -> int:
         if len(units) == 1:
             return schema.layers[-1].units
         low_units = self._get_half(units, True)
@@ -43,42 +43,42 @@ class LayerTuner(ILayerTuner):
         for current_units in [low_units, high_units]:
             count_of_units = self._get_mid(current_units)
             schema.layers[-1].units = count_of_units
-            step = self._experiment_step.run(schema, train_data, test_data)
+            step = self._experiment_step.run(schema, train_ds, val_ds, test_ds)
             steps.append(step)
 
         best_step = self._experiment_step.get_best_step(steps)
         best_schema = self._experiment_step.get_schema(best_step)
         next_units = low_units if best_schema.layers[-1].units in low_units else high_units
-        return self._get_best_units(train_data, test_data, best_schema, next_units)
+        return self._get_best_units(train_ds, val_ds, test_ds, best_schema, next_units)
 
-    def get_best_settings(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema,
+    def get_best_settings(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset, schema: IModelSchema,
                current_layer: ILayerSchema) -> ILayerSchema:
         options_schema = ModelSchema(
             layers=[LayerSchema(current_layer.type, self._get_mid(self.units_range))],
             optimizer=schema.optimizer,
             loss=schema.loss,
         )
-        steps = [self._experiment_step.run(options_schema, train_data, test_data)]
+        steps = [self._experiment_step.run(options_schema, train_ds, val_ds, test_ds)]
         for activation in self._details.activation:
             for regularizer in self._details.regularizer:
                 options_schema.layers[-1].activation = activation
                 options_schema.layers[-1].regularizer = regularizer
-                steps.append(self._experiment_step.run(options_schema, train_data, test_data))
+                steps.append(self._experiment_step.run(options_schema, train_ds, val_ds, test_ds))
 
         best_step = self._experiment_step.get_best_step(steps)
         best_schema = self._experiment_step.get_schema(best_step)
         return best_schema.layers[-1]
 
 
-    def rare_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> Sequence[ILayerSchema]:
+    def rare_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> Sequence[ILayerSchema]:
         low_units = self._get_half(self.units_range, True)
         units = self._get_mid(low_units)
         return [LayerSchema(self._details.layers[0], units)]
 
-    def tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema,
+    def tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset, schema: IModelSchema,
                current_layer: ILayerSchema) -> ILayerSchema:
         # step: 1 find best settings for current layer
-        settings = self.get_best_settings(train_data, test_data, schema, current_layer)
+        settings = self.get_best_settings(train_ds, val_ds, test_ds, schema, current_layer)
 
         units_schema = ModelSchema(
             layers=schema.layers + [LayerSchema(current_layer.type, current_layer.units, settings.activation, settings.regularizer)],
@@ -87,6 +87,6 @@ class LayerTuner(ILayerTuner):
         )
 
         # step: 2 find best units for current layer
-        best_count_of_units = self._get_best_units(train_data, test_data, units_schema, self.units_range)
+        best_count_of_units = self._get_best_units(train_ds, val_ds, test_ds, units_schema, self.units_range)
         units_schema.layers[-1].units = best_count_of_units
         return units_schema.layers[-1]

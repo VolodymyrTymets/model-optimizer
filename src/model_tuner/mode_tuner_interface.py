@@ -6,17 +6,19 @@ from src.model_schema.model_schema_types import IModelSchema
 class IModeTuner(ABC):
     # first step: 1 layer, low units, sequential optimizer, loses
     @abstractmethod
-    def rare_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> IModelSchema:
+    def rare_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset,
+                    test_ds: tf.data.Dataset, ) -> IModelSchema:
         pass
 
     # second step: 2 layers, high units, sequential activations, regularization
     @abstractmethod
-    def layers_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema) -> IModelSchema:
+    def layers_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset,
+                      schema: IModelSchema) -> IModelSchema:
         pass
 
     # third step: 3 ... todo: think about it, maybe argumentation, time, audio features
     @abstractmethod
-    def final_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset,
+    def final_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset,
                      schema: IModelSchema) -> IModelSchema:
         pass
 

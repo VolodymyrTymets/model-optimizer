@@ -10,6 +10,6 @@ class ModeTrainer(IModeTrainer):
     def __init__(self, logger: ILogger,):
         self._logger = logger
 
-    def train(self, model: tf.keras.Model, data: tf.data.Dataset) -> tf.keras.Model:
+    def train(self, model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset) -> tf.keras.Model:
         time.sleep(0.5)  # simulate training process
         return model

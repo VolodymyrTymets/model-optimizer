@@ -16,14 +16,14 @@ class ModeTuner(IModeTuner):
         self.layer_tuner = LayerTuner(details, experiment_step)
 
     # first step: 1 layer, low units, sequential optimizer, loses
-    def rare_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> IModelSchema:
-        layers = self.layer_tuner.rare_tuning(train_data, test_data)
+    def rare_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset,) -> IModelSchema:
+        layers = self.layer_tuner.rare_tuning(train_ds, val_ds, test_ds)
 
         steps = []
         for optimizer in self._details.optimizer:
             for loss in self._details.loss:
                 schema = ModelSchema(layers=layers, optimizer=optimizer, loss=loss)
-                step = self._experiment_step.run(schema, train_data, test_data)
+                step = self._experiment_step.run(schema, train_ds, val_ds, test_ds)
                 steps.append(step)
 
         best_step = self._experiment_step.get_best_step(steps)
@@ -35,13 +35,13 @@ class ModeTuner(IModeTuner):
         return best_schema
 
     # second step: 2 layers, high units, sequential activations, regularization
-    def layers_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset, schema: IModelSchema) -> IModelSchema:
+    def layers_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset, schema: IModelSchema) -> IModelSchema:
         self._logger.log(f"Layers tuning started", color="green")
         schema.layers = []
         self._logger.log(f"schema: {str(schema)}", )
         for layer in self._details.layers:
             self._logger.log(f"todo: Layer {layer} tuning started", color="yellow")
-            current_layer = self.layer_tuner.tuning(train_data, test_data, schema, LayerSchema(layer, 0))
+            current_layer = self.layer_tuner.tuning(train_ds, val_ds, test_ds, schema, LayerSchema(layer, 0))
             schema.layers.append(current_layer)
 
         self._logger.log(f"Layers tuning finished", color="green")
@@ -49,7 +49,7 @@ class ModeTuner(IModeTuner):
         return schema
 
     # third step: 3 ... todo: think about it, maybe argumentation, time, audio features
-    def final_tuning(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset,
+    def final_tuning(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset,
                      schema: IModelSchema) -> IModelSchema:
         self._logger.log(f"todo:Final tuning started", color="yellow")
         return schema

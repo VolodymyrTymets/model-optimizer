@@ -8,7 +8,7 @@ from src.model_schema.model_schema_types import IModelSchema
 
 class IExperimentStep(ABC):
     @abstractmethod
-    def run(self, schema: IModelSchema, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> ExperimentStepModel:
+    def run(self, schema: IModelSchema, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> ExperimentStepModel:
         pass
 
     @abstractmethod

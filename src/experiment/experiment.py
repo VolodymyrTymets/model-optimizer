@@ -24,14 +24,14 @@ class Experiment(IExperiment):
     def get_experiment_id(self) -> int:
         return self._experiment_model.id
 
-    def start(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> IModelSchema:
+    def start(self, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, test_ds: tf.data.Dataset) -> IModelSchema:
         self._logger.log("Experiment started")
 
-        schema = self.model_tuner.rare_tuning(test_data, train_data)
-        schema = self.model_tuner.layers_tuning(test_data, train_data, schema)
+        schema = self.model_tuner.rare_tuning(train_ds, val_ds, test_ds)
+        schema = self.model_tuner.layers_tuning(train_ds, val_ds, test_ds, schema)
 
         # todo: return schema with best settings
-        return self.model_tuner.final_tuning(test_data, train_data, schema)
+        return self.model_tuner.final_tuning(train_ds, val_ds, test_ds, schema)
 
     def finish(self):
         self._experiment_model_service.finish_experiment(self._experiment_model.id)
