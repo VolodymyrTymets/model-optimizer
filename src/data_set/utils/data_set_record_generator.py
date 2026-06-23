@@ -4,8 +4,10 @@ import numpy as np
 
 from src.data_set.utils.data_set_file_worker import DataSetFileWorker
 
-from src.definitions import sr as SR, labels
+from src.definitions import sr as SR, labels, DURATION
 
+DEFAULT_DURATION = 2.0
+count_of_fragments = int(DEFAULT_DURATION / DURATION)
 
 class DataSetRecordGenerator(DataSetFileWorker):
     def __init__(self, in_path: str, out_path: str, sub_sets: list[str], labels: list[str]):
@@ -32,6 +34,20 @@ class DataSetRecordGenerator(DataSetFileWorker):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(annotation, f, ensure_ascii=False, indent=2)
 
+    def _get_random_records(self, list_records: list[list[int]], count: int):
+        records = []
+        indexes = []
+        for _ in range(count):
+            test_record, index = self._get_random(list_records)
+            records.append(test_record)
+            indexes.append(index)
+        return np.concatenate(records), indexes
+
+    def _remove_by_indexes(self, list_records: list[list[int]], indexes: list[int]):
+        for index in indexes:
+            self._remove_by_index(list_records, index)
+        return list_records
+
     def generate_test_record(self, duration=float, except_sets: list['str'] = [], except_labels: list[str] = []):
         between_records = []
         annotations = {}
@@ -40,6 +56,7 @@ class DataSetRecordGenerator(DataSetFileWorker):
             label_order.remove(label)
         label_order.remove('noise')
         label_records = [[] for _ in label_order]
+
 
         for signal, sr, set_name, label, path, file in self.read_data_set(log=False):
             # transformations are only for train set
@@ -54,18 +71,18 @@ class DataSetRecordGenerator(DataSetFileWorker):
             label_records[label_index].append(signal)
             annotations[label] = []
 
-        test_record, index = self._get_random(between_records)
-        test_record = self.split_signal(test_record, 0.5)
-        between_records = self._remove_by_index(between_records, index)
+        test_record, indexes = self._get_random_records(between_records, count_of_fragments)
+        # test_record = self.split_signal(test_record, DURATION)
+        between_records = self._remove_by_indexes(between_records, indexes)
         timestamp = self._get_durations(0, test_record)[1]
 
         for index, records in enumerate(label_records):
             # get random record
-            record, rec_rm_index = self._get_random(records)
+            record, rec_rm_indexes = self._get_random_records(records, count_of_fragments)
             # get random between record
-            between_record, bt_rm_index = self._get_random(between_records)
-            between_record = self.split_signal(between_record, duration)
-            between_records = self._remove_by_index(between_records, bt_rm_index)
+            between_record, bt_rm_indexes = self._get_random_records(between_records, count_of_fragments)
+            # between_record = self.split_signal(between_record, duration)
+            between_records = self._remove_by_indexes(between_records, bt_rm_indexes)
 
             # update current timestamp
             record_timestamp = self._get_durations(timestamp, record)
