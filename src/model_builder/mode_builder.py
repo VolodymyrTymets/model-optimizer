@@ -20,15 +20,23 @@ class ModeBuilder(IModeBuilder):
             return tf.nn.sigmoid
         return None
 
-    def _build_layer(self, layer: ILayerSchema):
+    def _build_layer(self, layer: ILayerSchema, input_shape):
         activation = self._get_activation(layer.activation)
         if layer.type.value == LayerType.Dense.value:
             return [tf.keras.layers.Dense(units=layer.units, activation=activation)]
         if layer.type.value == LayerType.Conv.value:
-            return [tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation),
-                    tf.keras.layers.MaxPool2D()]
+            return [
+                tf.keras.layers.Reshape((input_shape + (1,)), name="reshape_to_conv"),
+                tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation),
+                tf.keras.layers.MaxPool2D(),
+                tf.keras.layers.Lambda(lambda x: tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x), name='reshape_after_conv')
+            ]
         if layer.type.value == LayerType.GRU.value:
-            return [tf.keras.layers.GRU(units=layer.units, activation=activation)]
+            layers = [
+                # tf.keras.layers.Reshape((64, 43, -1)),
+                tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True)]
+            print('layers:', layers)
+            return layers
         else:
             raise ValueError(f"Unsupported layer type: {layer.type}")
 
@@ -67,17 +75,19 @@ class ModeBuilder(IModeBuilder):
         model.add(tf.keras.layers.Input(shape=input_shape))
         model.add(norm_layer)
         for layer in schema.layers:
-            for sublayer in self._build_layer(layer):
+            for sublayer in self._build_layer(layer, input_shape):
                 model.add(sublayer)
             model.add(tf.keras.layers.Dropout(0.5))
         model.add(tf.keras.layers.Flatten())
         model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
         model.get_layer('normalization').adapt(train_ds.map(lambda x, label: x))
 
+
         model.compile(
             optimizer=self._get_optimizer(schema.optimizer),
             loss=self._get_loss(schema.loss),
             metrics=['accuracy'],
         )
+        print('before summary:')
         model.summary()
         return model

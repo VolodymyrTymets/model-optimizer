@@ -30,7 +30,7 @@ class DataSetImporter:
 
   @tf.function(input_signature=[tf.TensorSpec(shape=[None, FRAGMENT_LENGTH], dtype=tf.float32)])
   def reshape(self, i):
-    return tf.reshape(i, ((-1,) + self.shape + (1,)))
+    return tf.reshape(i, (-1,) + self.shape)
 
   @tf.function(input_signature=[tf.TensorSpec(shape=[None, FRAGMENT_LENGTH], dtype=tf.float32)])
   def get_audio_feature(self, i):
