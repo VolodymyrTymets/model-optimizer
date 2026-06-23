@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from src.audio_features.strategy.strategies.base_strategy import BaseStrategy
-from src.definitions import split_frequency
 from src.audio_features.types import AFTypes
 
 
@@ -14,5 +13,5 @@ class BERtrategy(BaseStrategy):
     self.ax = ax
 
   def get_audio_feature(self, signal: np.ndarray):
-    af = self.features.BER(signal=signal, sr=self.sr, frame_length=self.frame_length, hop_length=self.hop_length, split_frequency=split_frequency)
+    af = self.features.BER(signal=signal, sr=self.sr, frame_length=self.frame_length, hop_length=self.hop_length, split_frequency=2000)
     return af

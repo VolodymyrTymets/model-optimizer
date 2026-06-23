@@ -1,9 +1,12 @@
-from abc import ABC, abstractmethod
-
 import tensorflow as tf
+from abc import ABC, abstractmethod
+from src.model_schema.model_schema_types import IModelSchema
 
 
 class IExperiment(ABC):
     @abstractmethod
-    def run(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> None:
+    def start(self, train_data: tf.data.Dataset, test_data: tf.data.Dataset) -> IModelSchema:
+        pass
+    @abstractmethod
+    def finish(self):
         pass
