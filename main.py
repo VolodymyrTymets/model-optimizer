@@ -2,9 +2,12 @@ from src.data_set.types import ArgumentationTypes
 from src.experiment.experiment_types import ExperimentDetails
 from src.model_schema.model_schema_types import LayerType, OptimizerType, RegularizerType, LossType, ActivationType
 from src.experiment.experiment import Experiment
-from src.data_set.data_set import DataSet
+from src.data_set.data_set_cooker import DataSetCooker
+from src.data_set.data_set_importer import DataSetImporter
 
 from src.database.db_client import DBClient
+from src.definitions import DURATION, sr, frame_length, hop_length, af_type
+from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFactory
 
 
 def main():
@@ -13,6 +16,8 @@ def main():
     # todo: implement models validation
     db_client = DBClient()
     db_client.create_database()
+
+    af_strategy = AFStrategyFactory(sr=sr, frame_length=frame_length, hop_length=hop_length).create_strategy(af_type)
 
     experiment = Experiment(
         details=ExperimentDetails(
@@ -26,8 +31,11 @@ def main():
             loss=[LossType.MSE, LossType.BinaryCrossentropy],
         )
     )
-    data_set = DataSet(experiment_id=experiment.get_experiment_id())
-    data_set.prepare(duration=0.5, argumentation_types=[ArgumentationTypes.normalization])
+    data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id())
+    data_set_cooker.prepare(duration=DURATION, argumentation_types=[ArgumentationTypes.normalization])
+
+    data_set_importer = DataSetImporter(duration=DURATION, af_strategy=af_strategy)
+    rain_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set(data_set_cooker.get_data_set_path())
 
     # experiment.start(test_data=None, train_data=None)
     # experiment.finish()

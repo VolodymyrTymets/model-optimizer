@@ -10,7 +10,7 @@ from src.utils.logger.logger_service import Logger
 from src.definitions import ASSETS_PATH
 
 
-class DataSet:
+class DataSetCooker:
     def __init__(self, experiment_id: int):
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
         self.in_data_set_name = 'rare_data_set'
@@ -69,8 +69,5 @@ class DataSet:
         self._argument_data_set(argumentation_types=argumentation_types)
         self._generate_records(duration, record_count=10)
 
-    def get_train_data(self):
-        pass
-
-    def get_test_data(self):
-        pass
+    def get_data_set_path(self):
+        return self.data_set_path

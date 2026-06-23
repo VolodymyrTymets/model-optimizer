@@ -3,10 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import uuid
 from PIL import Image, ImageDraw
-from src.audio_features.audio_features import FrequencyDomainFeatures
+from src.utils.audio_features.audio_features import FrequencyDomainFeatures
 from src.definitions import ASSETS_PATH
-from src.audio_features.strategy.strategies.strategy_interface import IAFStrategy
-from src.files import Files
+from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
+from src.utils.files import Files
 
 class BaseStrategy(IAFStrategy):
   def __init__(self, sr: int, frame_length: int, hop_length: int):

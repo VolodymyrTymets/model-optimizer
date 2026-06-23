@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from src.audio_features.strategy.strategies.base_strategy import BaseStrategy
-from src.audio_features.types import AFTypes
+from src.utils.audio_features.strategy.strategies.base_strategy import BaseStrategy
+from src.utils.audio_features.types import AFTypes
 
 
 class BWtrategy(BaseStrategy):

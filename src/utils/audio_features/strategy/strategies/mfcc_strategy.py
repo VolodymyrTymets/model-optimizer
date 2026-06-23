@@ -1,7 +1,7 @@
 import numpy as np
-from src.audio_features.types import AFTypes
+from src.utils.audio_features.types import AFTypes
 from src.definitions import n_mfcc
-from src.audio_features.strategy.strategies.base_strategy import BaseStrategy
+from src.utils.audio_features.strategy.strategies.base_strategy import BaseStrategy
 
 
 class MFCCStrategy(BaseStrategy):
