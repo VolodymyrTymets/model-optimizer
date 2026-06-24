@@ -40,5 +40,5 @@ class Experiment(IExperiment):
         self._experiment_model_service.finish_experiment(self._experiment_model.id)
         self._logger.log("Experiment finished")
 
-    def summarize(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]):
-        self.experiment_summary_service.summarize(data_sets)
+    def summarize(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], labels: list[str]):
+        self.experiment_summary_service.summarize(data_sets, labels)

@@ -9,7 +9,7 @@ class IExperiment(ABC):
         pass
 
     @abstractmethod
-    def summarize(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]):
+    def summarize(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], labels: list[str]):
         pass
 
     @abstractmethod

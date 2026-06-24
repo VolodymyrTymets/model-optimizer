@@ -16,6 +16,7 @@ class DataSetCooker:
         self.in_data_set_name = 'rare_data_set'
         self.out_data_set_name = 'data_set'
         self.validation_records_folder_name = 'records'
+        self.model_path = join(self.experiment_path, 'model')
         self.data_set_path = join(self.experiment_path, self.out_data_set_name)
         self.data_set_splitter = DataSetSplitter(in_path=join(self.experiment_path, self.in_data_set_name),
                                                  out_path=self.data_set_path, sub_sets=sub_sets, labels=labels)
@@ -78,3 +79,6 @@ class DataSetCooker:
 
     def get_validation_records_path(self):
         return join(self.data_set_path, self.validation_records_folder_name)
+
+    def get_model_path(self):
+        return self.model_path
