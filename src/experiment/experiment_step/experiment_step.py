@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from src.data_set.data_set_cooker import DataSetCooker
 from src.database.schema import ExperimentStepModel, ModelSchemaModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
@@ -8,17 +9,19 @@ from src.model_schema.model_schema_types import IModelSchema, ModelSchema, Layer
 from src.model_trainer.mode_trainer import ModeTrainer
 from src.model_validator.mode_validator import ModeValidator
 from src.model_builder.mode_builder import ModeBuilder
+from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
 
 
 class ExperimentStep(IExperimentStep):
-    def __init__(self, experiment_id: int):
+    def __init__(self, experiment_id: int, af_strategy: IAFStrategy):
         self.experiment_id = experiment_id
         self._model_builder = ModeBuilder(logger=Logger('ModeBuilder'))
         self._mode_trainer = ModeTrainer(logger=Logger('ModeTrainer'))
-        self._mode_validator = ModeValidator(logger=Logger('ModeValidator'))
+        self._mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
         self._logger = Logger('ExperimentStep')
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
+        self.data_set_cooker = DataSetCooker(experiment_id)
 
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
         shema = self._experiment_step_model_service.get_schema(step.id)
@@ -47,7 +50,7 @@ class ExperimentStep(IExperimentStep):
                                                                                      step, schema)
         model = self._model_builder.build_model(schema, train_ds)
         model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
-        record_acc, valid_acc = self._mode_validator.validate(model, test_ds)
+        record_acc, valid_acc = self._mode_validator.validate(model, test_ds, self.data_set_cooker.get_validation_records_path())
         self._experiment_step_model_service.finish_experiment_step(self.experiment_id,
                                                                    schema, record_acc,
                                                                    valid_acc, history)

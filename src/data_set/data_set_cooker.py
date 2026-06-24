@@ -15,6 +15,7 @@ class DataSetCooker:
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
         self.in_data_set_name = 'rare_data_set'
         self.out_data_set_name = 'data_set'
+        self.validation_records_folder_name = 'records'
         self.data_set_path = join(self.experiment_path, self.out_data_set_name)
         self.data_set_splitter = DataSetSplitter(in_path=join(self.experiment_path, self.in_data_set_name),
                                                  out_path=self.data_set_path, sub_sets=sub_sets, labels=labels)
@@ -56,7 +57,7 @@ class DataSetCooker:
 
     def _generate_records(self, duration: float = 0.5, record_count: int = 10):
         self.logger.log(f'Generating records for train and test sets', color='blue')
-        if exists(join(self.experiment_path, self.out_data_set_name, 'records')):
+        if exists(join(self.experiment_path, self.out_data_set_name, self.validation_records_folder_name)):
             self.logger.log(f'Train records already generated', color='green')
             return
         for _ in range(record_count):
@@ -71,3 +72,6 @@ class DataSetCooker:
 
     def get_data_set_path(self):
         return self.data_set_path
+
+    def get_validation_records_path(self):
+        return join(self.data_set_path, self.validation_records_folder_name)
