@@ -39,6 +39,8 @@ def main():
     train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set(data_set_cooker.get_data_set_path())
 
     experiment.start((train_ds, val_ds, test_ds))
+    experiment.summarize((train_ds, val_ds, test_ds))
+
     experiment.finish()
 
 

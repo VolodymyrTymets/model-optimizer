@@ -98,3 +98,9 @@ class ExperimentStepModelService:
             latest = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).order_by(
                 ExperimentStepModel.step.desc()).first()
             return latest.step if latest is not None else 1
+
+    def get_best_step(self, experiment_id: int):
+        with self.db_client.session_scope() as session:
+            best = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).order_by(
+                ExperimentStepModel.accuracy_delta.desc()).first()
+            return best

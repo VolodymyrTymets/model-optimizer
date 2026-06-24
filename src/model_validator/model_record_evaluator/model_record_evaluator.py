@@ -3,7 +3,7 @@ import numpy as np
 import json
 import tensorflow as tf
 
-from src.model_validator.model_result_parser.model_result_parser_interaace import IModelResultParser
+from src.model_validator.model_result_parser.model_result_parser_interface import IModelResultParser
 from src.definitions import FRAGMENT_LENGTH, labels
 from src.utils.files import Files
 from src.utils.logger.logger_service import Logger

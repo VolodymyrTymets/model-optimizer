@@ -73,5 +73,8 @@ class DataSetCooker:
     def get_data_set_path(self):
         return self.data_set_path
 
+    def get_experiment_path(self):
+        return self.experiment_path
+
     def get_validation_records_path(self):
         return join(self.data_set_path, self.validation_records_folder_name)
