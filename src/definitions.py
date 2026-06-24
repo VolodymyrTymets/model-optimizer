@@ -12,6 +12,10 @@ hop_length = frame_length // 4
 n_mels = 64
 n_mfcc = 64
 labels = ['noise', 'stimulation', 'breath']
-labels_colors = ['blue', 'red', 'green']
+labels_colors = {
+    'noise': 'blue',
+    'stimulation': 'red',
+    'breath': 'green'
+}
 sub_sets = ['train', 'test']
 

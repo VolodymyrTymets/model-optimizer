@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from src.experiment.experiment_summarize_service.expirement_summarize_service import ExperimentSummarizeService
 from src.experiment.experiment_types import IExperimentDetails
 from src.experiment.experiment_interface import IExperiment
 from src.experiment.models.experiment_model_service import ExperimentModelService
@@ -8,10 +9,11 @@ from src.model_schema.model_schema_types import IModelSchema
 from src.model_tuner.mode_tuner import ModeTuner
 
 from src.utils.logger.logger_service import Logger
+from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 
 
 class Experiment(IExperiment):
-    def __init__(self, details: IExperimentDetails):
+    def __init__(self, details: IExperimentDetails, af_strategy: IAFStrategy):
         self._logger = Logger('Experiment')
 
 
@@ -19,7 +21,8 @@ class Experiment(IExperiment):
 
         self._experiment_model = self._experiment_model_service.get_current_experiment(details)
         self._details = self._experiment_model_service.get_details(self._experiment_model)
-        self.model_tuner = ModeTuner(details, ExperimentStep(self._experiment_model.id))
+        self.model_tuner = ModeTuner(details, ExperimentStep(self._experiment_model.id, af_strategy))
+        self.experiment_summary_service = ExperimentSummarizeService(details, af_strategy)
 
     def get_experiment_id(self) -> int:
         return self._experiment_model.id
@@ -36,3 +39,6 @@ class Experiment(IExperiment):
     def finish(self):
         self._experiment_model_service.finish_experiment(self._experiment_model.id)
         self._logger.log("Experiment finished")
+
+    def summarize(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], labels: list[str]):
+        self.experiment_summary_service.summarize(data_sets, labels)
