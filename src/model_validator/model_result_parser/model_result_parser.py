@@ -21,7 +21,11 @@ class ModelResultParser(IModelResultParser):
         return self.strategy.get_audio_feature(signal=pad_list(x, FRAGMENT_LENGTH))
 
     def _reshape(self, model: tf.keras.Model, x: np.ndarray) -> np.ndarray:
-        if x.shape != model.input_shape:
+        try:
+          model_shape = model.input_shape
+        except AttributeError:
+            return x
+        if x.shape != model_shape:
             return tf.reshape(x, (-1,) + x.shape)
         return x
 

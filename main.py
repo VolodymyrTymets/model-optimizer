@@ -28,7 +28,7 @@ def main():
         ),
         af_strategy=af_strategy
     )
-    data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id())
+    data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id(), af_strategy=af_strategy)
     data_set_cooker.prepare(duration=DURATION, argumentation_types=[])
 
     data_set_importer = DataSetImporter(experiment_id=experiment.get_experiment_id(), duration=DURATION,

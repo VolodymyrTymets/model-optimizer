@@ -36,7 +36,7 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
 
         self._experiment_model = self._experiment_model_service.get_current_experiment(details)
         self._details = self._experiment_model_service.get_details(self._experiment_model)
-        self.data_set_cooker = DataSetCooker(experiment_id=self._experiment_model.id)
+        self.data_set_cooker = DataSetCooker(experiment_id=self._experiment_model.id, af_strategy=af_strategy)
         self.result_path = join(self.assets_service.get_experiment_path(), 'results')
         self.model_record_label_service = ModelRecordLabeler(ModelResultParser(af_strategy=af_strategy), export_path=self.result_path)
         self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)

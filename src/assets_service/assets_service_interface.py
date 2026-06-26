@@ -3,6 +3,10 @@ from abc import ABC, abstractmethod
 
 class IAssetsService(ABC):
     @abstractmethod
+    def get_assets_path(self) -> str:
+        pass
+
+    @abstractmethod
     def get_data_set_path(self) -> str:
         pass
 

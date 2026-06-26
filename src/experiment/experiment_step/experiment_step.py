@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from src.assets_service.assets_service import AssetsService
-from src.data_set.data_set_cooker import DataSetCooker
 from src.database.schema import ExperimentStepModel, ModelSchemaModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
@@ -25,7 +24,6 @@ class ExperimentStep(IExperimentStep):
         self._model_weights_service = ModelWeightsExporter(self.assets_service)
         self._logger = Logger('ExperimentStep')
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
-        self.data_set_cooker = DataSetCooker(experiment_id)
 
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
         shema = self._experiment_step_model_service.get_schema(step.id)

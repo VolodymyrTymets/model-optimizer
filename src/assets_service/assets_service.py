@@ -13,6 +13,10 @@ class AssetsService(IAssetsService):
         self.model_path = join(self.experiment_path, 'model')
         self.data_set_path = join(self.experiment_path, self.out_data_set_name)
 
+
+    def get_assets_path(self):
+        return ASSETS_PATH
+
     def get_data_set_path(self):
         return self.data_set_path
 
