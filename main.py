@@ -1,4 +1,3 @@
-from src.data_set.types import ArgumentationTypes
 from src.experiment.experiment_types import ExperimentDetails
 from src.model_schema.model_schema_types import LayerType, OptimizerType, RegularizerType, LossType, ActivationType
 from src.experiment.experiment import Experiment
@@ -11,9 +10,6 @@ from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFact
 
 
 def main():
-    # todo: add data-set import
-    # todo: implement models building
-    # todo: implement models validation
     db_client = DBClient()
     db_client.create_database()
 
@@ -35,13 +31,14 @@ def main():
     data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id())
     data_set_cooker.prepare(duration=DURATION, argumentation_types=[])
 
-    data_set_importer = DataSetImporter(duration=DURATION, af_strategy=af_strategy)
-    train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set(data_set_cooker.get_data_set_path())
+    data_set_importer = DataSetImporter(experiment_id=experiment.get_experiment_id(), duration=DURATION,
+                                        af_strategy=af_strategy)
+    train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
 
     experiment.start((train_ds, val_ds, test_ds))
     experiment.summarize((train_ds, val_ds, test_ds), labels=label_names)
 
-    # experiment.finish()
+    experiment.finish()
 
 
 if __name__ == "__main__":
