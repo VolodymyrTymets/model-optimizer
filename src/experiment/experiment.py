@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from src.assets_service.assets_service import AssetsService
 from src.experiment.experiment_summarize_service.expirement_summarize_service import ExperimentSummarizeService
 from src.experiment.experiment_types import IExperimentDetails
 from src.experiment.experiment_interface import IExperiment
@@ -16,13 +17,13 @@ class Experiment(IExperiment):
     def __init__(self, details: IExperimentDetails, af_strategy: IAFStrategy):
         self._logger = Logger('Experiment')
 
-
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
 
         self._experiment_model = self._experiment_model_service.get_current_experiment(details)
         self._details = self._experiment_model_service.get_details(self._experiment_model)
         self.model_tuner = ModeTuner(details, ExperimentStep(self._experiment_model.id, af_strategy))
-        self.experiment_summary_service = ExperimentSummarizeService(details, af_strategy)
+        self.experiment_summary_service = ExperimentSummarizeService(details, af_strategy, AssetsService(
+            experiment_id=self._experiment_model.id))
 
     def get_experiment_id(self) -> int:
         return self._experiment_model.id

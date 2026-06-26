@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 
+from src.assets_service.assets_service import AssetsService
 from src.definitions import FRAGMENT_LENGTH, sr
 from src.utils.files import Files
 from src.utils.logger.logger_service import Logger
@@ -9,12 +10,14 @@ from src.utils.audio_features.strategy.strategies.strategy_interface import IAFS
 
 
 class DataSetImporter:
-  def __init__(self, af_strategy: IAFStrategy, duration: float = 10.0):
+  def __init__(self, experiment_id: int, af_strategy: IAFStrategy, duration: float = 10.0):
     self.files = Files()
     self.loger = Logger('CNNModelPreprocessStrategy')
     self.af_strategy = af_strategy
     self.duration = duration
     self.shape = self._calculate_shape()
+    self._asset_service = AssetsService(experiment_id=experiment_id)
+    self.experiment_id = experiment_id
 
   def _get_fragment_length(self):
     return int(sr / (1 / self.duration))
@@ -36,7 +39,8 @@ class DataSetImporter:
   def get_audio_feature(self, i):
     return tf.py_function(self.get_bunch_audio_feature, [i], tf.float32)
 
-  def import_data_set(self, data_set_path: str):
+  def import_data_set(self):
+    data_set_path = self._asset_service.get_data_set_path()
     # Form data storage
     train_ds, val_ds = tf.keras.utils.audio_dataset_from_directory(
       directory=self.files.join(data_set_path, 'train'),
