@@ -29,7 +29,6 @@ class DataSetFileWorker:
 
     def read_data_set(self, log: bool = True):
         ds_path = self.in_path
-        print('Start reading data set:', ds_path)
         for set_name in self.set_names:
             for label in self.labels:
                 try:

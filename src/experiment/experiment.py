@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from src.assets_service.assets_service import AssetsService
 from src.experiment.experiment_summarize_service.expirement_summarize_service import ExperimentSummarizeService
-from src.experiment.experiment_types import IExperimentDetails
+from src.experiment.experiment_types import IExperimentDetails, IExperimentDataSetDetails
 from src.experiment.experiment_interface import IExperiment
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.experiment_step.experiment_step import ExperimentStep
@@ -14,15 +14,15 @@ from src.utils.audio_features.strategy.strategies.strategy_interface import IAFS
 
 
 class Experiment(IExperiment):
-    def __init__(self, details: IExperimentDetails, af_strategy: IAFStrategy):
+    def __init__(self, details: IExperimentDetails, data_set_details: IExperimentDataSetDetails,
+                 af_strategy: IAFStrategy):
         self._logger = Logger('Experiment')
 
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
 
-        self._experiment_model = self._experiment_model_service.get_current_experiment(details)
-        self._details = self._experiment_model_service.get_details(self._experiment_model)
+        self._experiment_model = self._experiment_model_service.get_current_experiment(details, data_set_details)
         self.model_tuner = ModeTuner(details, ExperimentStep(self._experiment_model.id, af_strategy))
-        self.experiment_summary_service = ExperimentSummarizeService(details, af_strategy, AssetsService(
+        self.experiment_summary_service = ExperimentSummarizeService(self._experiment_model, af_strategy, AssetsService(
             experiment_id=self._experiment_model.id))
 
     def get_experiment_id(self) -> int:
@@ -30,6 +30,9 @@ class Experiment(IExperiment):
 
     def start(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> IModelSchema:
         self._logger.log("Experiment started")
+        if self._experiment_model.endAt is not None:
+            self._logger.log("Experiment already finished", color="yellow")
+            return self.experiment_summary_service.get_best_step_schema(experiment_id=self._experiment_model.id)
 
         schema = self.model_tuner.rare_tuning(data_sets)
         schema = self.model_tuner.layers_tuning(data_sets, schema)
