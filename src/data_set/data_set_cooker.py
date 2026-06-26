@@ -2,18 +2,19 @@ from os.path import join, exists
 import shutil
 
 from src.assets_service.assets_service import AssetsService
-from src.assets_service.assets_service_interface import IAssetsService
+from src.data_set.utils.data_set_filter import DataSetFilter
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
 from src.definitions import labels, sub_sets
 from src.data_set.types import ArgumentationTypes
+from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
 from src.definitions import ASSETS_PATH
 
 
 class DataSetCooker:
-    def __init__(self, experiment_id: int):
+    def __init__(self, experiment_id: int, af_strategy: IAFStrategy):
         self._asset_service = AssetsService(experiment_id=experiment_id)
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
         self.model_path = join(self.experiment_path, 'model')
@@ -27,6 +28,9 @@ class DataSetCooker:
         self.data_set_record_generator = DataSetRecordGenerator(in_path=datasets_path,
                                                                 out_path=datasets_path,
                                                                 sub_sets=sub_sets, labels=labels)
+        self.data_set_filter = DataSetFilter(in_path=datasets_path, out_path=datasets_path,
+                                             sub_sets=sub_sets, labels=labels, af_strategy=af_strategy,
+                                             assets_service=self._asset_service)
 
         self.logger = Logger('DataSet')
 
@@ -65,8 +69,12 @@ class DataSetCooker:
             self.data_set_record_generator.generate_test_record(duration=duration, except_sets=['train'],
                                                                 except_labels=[])
 
+    def _filter_data_set(self, duration: float = 0.5):
+        self.data_set_filter.filter(duration=duration)
+
     def prepare(self, duration: float = 0.5, argumentation_types=list[ArgumentationTypes]):
         self._copy_data_set()
         self._split_data_set(duration)
+        self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
         self._generate_records(duration, record_count=10)
