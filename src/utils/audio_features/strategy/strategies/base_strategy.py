@@ -10,6 +10,7 @@ from src.utils.files import Files
 
 class BaseStrategy(IAFStrategy):
   def __init__(self, sr: int, frame_length: int, hop_length: int):
+    self.af_type = None
     self.features = FrequencyDomainFeatures()
     self.frame_length = frame_length
     self.hop_length = hop_length
@@ -50,3 +51,7 @@ class BaseStrategy(IAFStrategy):
 
   def get_audio_feature(self, signal: np.ndarray):
     pass
+
+  @property
+  def AFType(self):
+    return self.af_type

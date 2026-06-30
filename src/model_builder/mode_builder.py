@@ -35,7 +35,6 @@ class ModeBuilder(IModeBuilder):
             layers = [
                 # tf.keras.layers.Reshape((64, 43, -1)),
                 tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True)]
-            print('layers:', layers)
             return layers
         else:
             raise ValueError(f"Unsupported layer type: {layer.type}")
@@ -88,6 +87,5 @@ class ModeBuilder(IModeBuilder):
             loss=self._get_loss(schema.loss),
             metrics=['accuracy'],
         )
-        print('before summary:')
         model.summary()
         return model

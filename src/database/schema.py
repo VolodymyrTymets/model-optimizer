@@ -18,6 +18,7 @@ class ExperimentModel(Base):
      endAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
      details: Mapped["ExperimentDetailsModel"] = relationship(back_populates="experiment")
+     data_set_details: Mapped["ExperimentDataSetDetailsModel"] = relationship(back_populates="experiment")
      steps: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="experiment")
      model_schemas: Mapped[List["ModelSchemaModel"]] = relationship(back_populates="experiment")
      model_layers: Mapped[List["ModelLayerModel"]] = relationship(back_populates="experiment")
@@ -43,6 +44,17 @@ class ExperimentDetailsModel(Base):
 
     def __repr__(self):
         return f"ExperimentDetailsModel(epochs={int(self.epochs)}, batch_size={int(self.batch_size)}, layers={self.layers}, activation={self.activation}, optimizer={self.optimizer}, regularizer={self.regularizer}, loss={self.loss}, units_range={self.units_range})"
+
+class ExperimentDataSetDetailsModel(Base):
+    __tablename__ = "experiment_data_set_details"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    experiment_id: Mapped[int] = mapped_column(ForeignKey("experiment.id"))
+    duration: Mapped[float] = mapped_column(sa.Float)
+    labels: Mapped[str] = mapped_column(sa.String)
+    argumentation_types: Mapped[str] = mapped_column(sa.String)
+    af_type: Mapped[str] = mapped_column(sa.String)
+
+    experiment: Mapped["ExperimentModel"] = relationship(back_populates="data_set_details")
 
 class ExperimentStepModel(Base):
     __tablename__ = "experiment_step"

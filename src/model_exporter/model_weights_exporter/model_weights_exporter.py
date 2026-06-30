@@ -1,6 +1,7 @@
 from tensorboard.compat import tf
 
 from src.assets_service.assets_service_interface import IAssetsService
+from src.definitions import EMULATE_MODE
 from src.model_exporter.model_weights_exporter.model_weights_exporter_interface import IModelWeightsExporter
 from src.utils.files import Files
 from src.utils.logger.logger_service import Logger
@@ -17,8 +18,12 @@ class ModelWeightsExporter(IModelWeightsExporter):
         return self.files.join(self.target_path, f'iw_{step}.weights.h5')
 
     def export_weights(self, model, step: int):
+        if EMULATE_MODE:
+            return
         model.save_weights(self._get_weights_path(step))
 
     def import_weights(self, model, step: int) -> tf.keras.Model:
+        if EMULATE_MODE:
+            return model
         model.load_weights(self._get_weights_path(step))
         return model

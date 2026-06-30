@@ -1,17 +1,17 @@
 import tensorflow as tf
-import numpy as np
 from os.path import join
 
 from src.assets_service.assets_service_interface import IAssetsService
 from src.data_set.data_set_cooker import DataSetCooker
+from src.definitions import EMULATE_MODE
 from src.experiment.experiment_summarize_service.expirement_summarize_service_interface import \
     IExperimentSummarizeService
 from src.experiment.experiment_step.experiment_step import ExperimentStep
-from src.experiment.experiment_types import IExperimentDetails
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
 from src.model_builder.mode_builder import ModeBuilder
 from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
+from src.model_schema.model_schema_types import IModelSchema
 from src.model_trainer.mode_trainer import ModeTrainer
 from src.model_validator.model_record_label.model_record_label import ModelRecordLabeler
 from src.model_validator.model_record_evaluator.model_record_evaluator import ModelRecordEvaluator
@@ -20,10 +20,12 @@ from src.model_validator.model_result_parser.model_result_parser import ModelRes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_exporter import ModelExporter
+from src.database.schema import ExperimentModel
+
 
 
 class ExperimentSummarizeService(IExperimentSummarizeService):
-    def __init__(self, details: IExperimentDetails, af_strategy: IAFStrategy, assets_service: IAssetsService):
+    def __init__(self, experiment_model: ExperimentModel, af_strategy: IAFStrategy, assets_service: IAssetsService):
         self.logger = Logger('ExperimentSummarizeService')
         self.assets_service = assets_service
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
@@ -34,13 +36,13 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self.mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
         self.model_record_evaluator = ModelRecordEvaluator(ModelResultParser(af_strategy=af_strategy))
 
-        self._experiment_model = self._experiment_model_service.get_current_experiment(details)
+        self._experiment_model = experiment_model
         self._details = self._experiment_model_service.get_details(self._experiment_model)
         self.data_set_cooker = DataSetCooker(experiment_id=self._experiment_model.id, af_strategy=af_strategy)
         self.result_path = join(self.assets_service.get_experiment_path(), 'results')
         self.model_record_label_service = ModelRecordLabeler(ModelResultParser(af_strategy=af_strategy), export_path=self.result_path)
         self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)
-        self.model_exporter = ModelExporter()
+        self.model_exporter = ModelExporter(af_strategy=af_strategy)
         self.model_weights_service = ModelWeightsExporter(self.assets_service)
 
     def _log_experiment_details(self, best_step, best_schema, record_acc, validation_acc):
@@ -61,10 +63,16 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         model = self.model_weights_service.import_weights(model, best_step.step)
         model, history = self.mode_trainer.train(model, train_ds, val_ds, self._details.epochs)
         record_acc, validation_acc = self.mode_validator.validate(model=model, data=test_ds, validation_records_path=self.assets_service.get_validation_records_path())
-        self.model_record_label_service.label_records(model=model, from_path=self.assets_service.get_validation_records_path())
-        self.model_exporter.export_model(model, path=self.assets_service.get_model_path(), labels=labels)
-        self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())
-        self.model_exporter.export_training_plot(history, path=self.assets_service.get_model_path())
+        if EMULATE_MODE is False:
+            self.model_record_label_service.label_records(model=model, from_path=self.assets_service.get_validation_records_path())
+            self.model_exporter.export_model(model, path=self.assets_service.get_model_path(), labels=labels)
+            self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())
+            self.model_exporter.export_training_plot(history, path=self.assets_service.get_model_path())
         self.logger.log("Experiment summarized finished", color="green")
 
         self._log_experiment_details(best_step, best_schema, record_acc, validation_acc)
+
+    def get_best_step_schema(self, experiment_id: int) -> IModelSchema:
+        best_step = self._experiment_step_model_service.get_best_step(self._experiment_model.id)
+        best_schema = self._experiment_step.get_schema(step=best_step)
+        return best_schema

@@ -1,8 +1,10 @@
 import datetime
+from typing import Any, Optional
 
-from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel
+from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel, \
+    ExperimentDataSetDetailsModel
 from src.database.db_client import DBClient
-from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails
+from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails
 from src.model_schema.model_schema_types import LayerType, ActivationType, OptimizerType, RegularizerType, LossType
 from src.utils.logger.logger_interface import ILogger
 
@@ -12,7 +14,29 @@ class ExperimentModelService:
         self._logger = logger
         self.db_client = DBClient()
 
-    def _create(self, experiment_details: IExperimentDetails):
+    def _get_current_experiment(self, session, experiment_details: IExperimentDetails,
+                                  data_set_details: IExperimentDataSetDetails) -> Optional[DBExperimentModel]:
+        _experiment_details = session.query(ExperimentDetailsModel).filter(
+            ExperimentDetailsModel.layers == ','.join(x.value for x in experiment_details.layers),
+            ExperimentDetailsModel.activation == ','.join(x.value for x in experiment_details.activation),
+            ExperimentDetailsModel.optimizer == ','.join(x.value for x in experiment_details.optimizer),
+            ExperimentDetailsModel.regularizer == ','.join(x.value for x in experiment_details.regularizer)
+        ).all()
+        experiment_details_ids = [x.id for x in _experiment_details]
+        _experiment_data_set_details = session.query(ExperimentDataSetDetailsModel).filter(
+            ExperimentDataSetDetailsModel.duration == data_set_details.duration,
+            ExperimentDataSetDetailsModel.labels == ','.join(data_set_details.labels),
+            ExperimentDataSetDetailsModel.af_type == data_set_details.af_type.value,
+            ExperimentDataSetDetailsModel.argumentation_types == ','.join(x.value for x in  data_set_details.argumentation_types)
+        ).all()
+        experiment_data_set_details_ids = [x.id for x in _experiment_data_set_details]
+        uniq = set(experiment_details_ids).intersection(set(experiment_data_set_details_ids))
+        experiment_id = uniq.pop() if len(uniq) > 0 else None
+        if experiment_id is not None:
+            return session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).first()
+        return None
+
+    def _create(self, experiment_details: IExperimentDetails, data_set_details: IExperimentDataSetDetails):
         self._logger.log("Creating new experiment...", color="green")
         with self.db_client.session_scope() as session:
             details = ExperimentDetailsModel(
@@ -25,8 +49,15 @@ class ExperimentModelService:
                 batch_size=experiment_details.batch_size,
                 units_range=','.join([str(x) for x in experiment_details.units_range]),
             )
+            data_set_details_model = ExperimentDataSetDetailsModel(
+                duration=data_set_details.duration,
+                labels=','.join(data_set_details.labels),
+                argumentation_types=','.join(x.value for x in data_set_details.argumentation_types),
+                af_type=data_set_details.af_type.value,
+            )
             new_experiment = DBExperimentModel(
-                details=details
+                details=details,
+                data_set_details=data_set_details_model
             )
             session.add_all([new_experiment])
             session.commit()
@@ -40,14 +71,14 @@ class ExperimentModelService:
             session.commit()
             return True
 
-    def get_current_experiment(self, experiment_details: IExperimentDetails):
+    def get_current_experiment(self, experiment_details: IExperimentDetails,
+                               data_set_details: IExperimentDataSetDetails):
         with self.db_client.session_scope() as session:
-            latest = session.query(DBExperimentModel).order_by(DBExperimentModel.id.desc()).first()
+            latest = self._get_current_experiment(session, experiment_details, data_set_details)
             if latest is not None and latest.endAt is None:
                 self._logger.log("Found not finished experiment", color="yellow")
                 return latest
-            return self._create(experiment_details)
-
+            return self._create(experiment_details, data_set_details)
 
     def get_details(self, experiment: DBExperimentModel) -> IExperimentDetails:
         with self.db_client.session_scope() as session:
