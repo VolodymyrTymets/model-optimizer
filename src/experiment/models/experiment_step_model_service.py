@@ -1,8 +1,9 @@
 import datetime
 import tensorflow as tf
+from typing import List
 from sqlalchemy.orm import selectinload
 
-from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel
+from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel, ImageModel
 from src.database.db_client import DBClient
 from src.model_schema.model_schema_types import IModelSchema
 from src.utils.logger.logger_interface import ILogger
@@ -95,12 +96,49 @@ class ExperimentStepModelService:
 
     def get_last_step(self, experiment_id: int):
         with self.db_client.session_scope() as session:
-            latest = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).order_by(
+            latest = session.query(ExperimentStepModel).where(
+                ExperimentStepModel.experiment_id == experiment_id).order_by(
                 ExperimentStepModel.step.desc()).first()
             return latest.step if latest is not None else 1
 
     def get_best_step(self, experiment_id: int):
         with self.db_client.session_scope() as session:
-            best = session.query(ExperimentStepModel).where(ExperimentStepModel.experiment_id == experiment_id).order_by(
+            best = session.query(ExperimentStepModel).where(
+                ExperimentStepModel.experiment_id == experiment_id).order_by(
                 ExperimentStepModel.accuracy_delta.desc()).first()
             return best
+
+    def save_schema_plot(self, step_id: int, schema_plot: ImageModel):
+        with self.db_client.session_scope() as session:
+            session.add(schema_plot)
+            schema = session.query(ModelSchemaModel).filter(ModelSchemaModel.experiment_step_id == step_id).first()
+            if schema is None:
+                return
+            schema.plot = schema_plot
+            session.flush()
+            session.add(schema)
+            session.commit()
+
+    def save_training_history_plot(self, step_id: int, training_history_plot: ImageModel):
+        with self.db_client.session_scope() as session:
+            session.add(training_history_plot)
+            step = session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
+            if step is None:
+                return
+            step.training_history_plot = training_history_plot
+            session.flush()
+            session.add(step)
+            session.commit()
+
+    def save_results(self, step_id: int, results: List[ImageModel]):
+        with self.db_client.session_scope() as session:
+            step = session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
+            if step is None:
+                return
+            for result in results:
+                session.add(result)
+            session.flush()
+            step.results.extend(results)
+            session.add(step)
+            session.commit()
+

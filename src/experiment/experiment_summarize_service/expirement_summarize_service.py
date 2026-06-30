@@ -1,3 +1,4 @@
+import base64
 import tensorflow as tf
 from os.path import join
 
@@ -20,8 +21,7 @@ from src.model_validator.model_result_parser.model_result_parser import ModelRes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_exporter import ModelExporter
-from src.database.schema import ExperimentModel
-
+from src.database.schema import ExperimentModel, ImageModel
 
 
 class ExperimentSummarizeService(IExperimentSummarizeService):
@@ -40,10 +40,17 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self._details = self._experiment_model_service.get_details(self._experiment_model)
         self.data_set_cooker = DataSetCooker(experiment_id=self._experiment_model.id, af_strategy=af_strategy)
         self.result_path = join(self.assets_service.get_experiment_path(), 'results')
-        self.model_record_label_service = ModelRecordLabeler(ModelResultParser(af_strategy=af_strategy), export_path=self.result_path)
+        self.model_record_label_service = ModelRecordLabeler(ModelResultParser(af_strategy=af_strategy),
+                                                             export_path=self.result_path)
         self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)
         self.model_exporter = ModelExporter(af_strategy=af_strategy)
         self.model_weights_service = ModelWeightsExporter(self.assets_service)
+
+    def _get_image_model(self, path: str) -> ImageModel:
+        with open(path, "rb") as image_file:
+            base64_bytes = base64.b64encode(image_file.read())
+            base64_string = base64_bytes.decode("utf-8")
+            return ImageModel(base64=base64_string)
 
     def _log_experiment_details(self, best_step, best_schema, record_acc, validation_acc):
         self.logger.log(f"Experiment {self._experiment_model.id} summary:")
@@ -62,12 +69,27 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         model = self.mode_builder.build_model(best_schema, train_ds)
         model = self.model_weights_service.import_weights(model, best_step.step)
         model, history = self.mode_trainer.train(model, train_ds, val_ds, self._details.epochs)
-        record_acc, validation_acc = self.mode_validator.validate(model=model, data=test_ds, validation_records_path=self.assets_service.get_validation_records_path())
+        record_acc, validation_acc = self.mode_validator.validate(model=model, data=test_ds,
+                                                                  validation_records_path=self.assets_service.get_validation_records_path())
         if EMULATE_MODE is False:
-            self.model_record_label_service.label_records(model=model, from_path=self.assets_service.get_validation_records_path())
+            # generate results and save them locally
+            record_path = [x for x in self.model_record_label_service.label_records(model=model,
+                                                                                    from_path=self.assets_service.get_validation_records_path())]
             self.model_exporter.export_model(model, path=self.assets_service.get_model_path(), labels=labels)
-            self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())
-            self.model_exporter.export_training_plot(history, path=self.assets_service.get_model_path())
+            mode_plot_path = self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())
+            training_plot_path = self.model_exporter.export_training_plot(history,
+                                                                          path=self.assets_service.get_model_path())
+
+            # save results to database
+            self._experiment_step_model_service.save_results(step_id=best_step.id,
+                                                             results=[self._get_image_model(path=x) for x in
+                                                                      record_path])
+            self._experiment_step_model_service.save_schema_plot(step_id=best_step.id,
+                                                                 schema_plot=self._get_image_model(path=mode_plot_path))
+            self._experiment_step_model_service.save_training_history_plot(step_id=best_step.id,
+                                                                           training_history_plot=self._get_image_model(
+                                                                               path=training_plot_path))
+
         self.logger.log("Experiment summarized finished", color="green")
 
         self._log_experiment_details(best_step, best_schema, record_acc, validation_acc)

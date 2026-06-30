@@ -1,3 +1,5 @@
+from typing import Any, Generator
+
 import tensorflow as tf
 from google.protobuf import duration
 from matplotlib import pyplot as plt
@@ -35,7 +37,7 @@ class ModelRecordLabeler(IModelRecordLabeler):
                 legend_labels.append(str(label).capitalize())
         ax.legend(legends, legend_labels, loc='upper right')
 
-    def _save_plot(self, file_name: str, segments, colors, segments_labels):
+    def _save_plot(self, file_name: str, segments, colors, segments_labels) -> str:
         plt.rcParams.update({
             'font.size': 10,
             'legend.fontsize': 14,
@@ -52,6 +54,7 @@ class ModelRecordLabeler(IModelRecordLabeler):
         fig_path = self.files.join(self.export_path, file_name.replace('.wav', '.png'))
         plt.savefig(fig_path)
         self.loger.log(f'-> {fig_path} is saved', color='green')
+        return fig_path
 
     def label_record(self, model: tf.keras.Model, file_path: str, file_name: str = ''):
         waveform, _ = self.wav_files.read(file_path)
@@ -71,9 +74,9 @@ class ModelRecordLabeler(IModelRecordLabeler):
             colors.append(color)
             line_labels.append(line_label)
 
-        self._save_plot(file_name, segments, colors, line_labels)
+        return self._save_plot(file_name, segments, colors, line_labels)
 
-    def label_records(self, model: tf.keras.Model, from_path: str):
+    def label_records(self, model: tf.keras.Model, from_path: str) -> Generator[str, Any, None]:
         for file in self.files.get_only_files(from_path):
             if file.endswith('.wav'):
-                self.label_record(model, self.files.join(from_path, file), file)
+                yield self.label_record(model, self.files.join(from_path, file), file)
