@@ -31,9 +31,6 @@ class ExperimentModelService:
         ).all()
         experiment_data_set_details_ids = [x.id for x in _experiment_data_set_details]
         uniq = set(experiment_details_ids).intersection(set(experiment_data_set_details_ids))
-        print('experiment_details', experiment_details)
-        print('data_set_details', data_set_details.argumentation_types)
-        print('uniq', uniq)
         experiment_id = uniq.pop() if len(uniq) > 0 else None
         if experiment_id is not None:
             return session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).first()

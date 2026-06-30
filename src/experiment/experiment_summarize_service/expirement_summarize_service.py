@@ -42,7 +42,7 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self.result_path = join(self.assets_service.get_experiment_path(), 'results')
         self.model_record_label_service = ModelRecordLabeler(ModelResultParser(af_strategy=af_strategy), export_path=self.result_path)
         self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)
-        self.model_exporter = ModelExporter()
+        self.model_exporter = ModelExporter(af_strategy=af_strategy)
         self.model_weights_service = ModelWeightsExporter(self.assets_service)
 
     def _log_experiment_details(self, best_step, best_schema, record_acc, validation_acc):

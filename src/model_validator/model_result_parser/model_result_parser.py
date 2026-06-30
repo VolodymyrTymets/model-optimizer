@@ -1,8 +1,8 @@
-from typing import Literal, Union
-
 import numpy as np
 from src.definitions import FRAGMENT_LENGTH, labels
 import tensorflow as tf
+
+from src.utils.audio_features.types import AFTypes
 from src.utils.lists import pad_list
 
 from src.model_validator.model_result_parser.model_result_parser_interface import IModelResultParser
@@ -29,28 +29,35 @@ class ModelResultParser(IModelResultParser):
             return tf.reshape(x, (-1,) + x.shape)
         return x
 
-    def _parse_in_memory_model(self, model: tf.keras.Model, x: np.ndarray) -> tuple[str, float]:
-        result = model(tf.convert_to_tensor(x, dtype=tf.float32))
+    def _parse_in_memory_model(self, model: tf.keras.Model,  x: tf.Tensor) -> tuple[str, float]:
+        result = model(x)
         class_ids = tf.argmax(result, axis=-1)
         class_names = tf.gather(self.label_names, class_ids)
         return class_names.numpy()[0].decode("utf-8"), result.numpy()[0][class_ids.numpy()[0]]
 
-    def _parse_on_disk_model(self, model: tf.keras.Model, x: np.ndarray) -> tuple[str, float]:
-        result = model(tf.convert_to_tensor(x, dtype=tf.float32))
+    def _parse_on_disk_model(self, model: tf.keras.Model, x: tf.Tensor) -> tuple[str, float]:
+        result = model(x)
         label = result['label_names'].numpy()[result['class_ids'].numpy()[0]]
         prediction = result['predictions'].numpy()[0][result['class_ids'].numpy()[0]]
         return label.decode("utf-8"), prediction
 
     def parse(self, model: tf.keras.Model, x: np.ndarray) -> tuple[str, float]:
-        af = self._reshape(model, self._get_af(x))
+        af = self._reshape(model, self._get_af(x).astype(np.float32))
+        ten_af = tf.convert_to_tensor(af, dtype=tf.float32)
+
         try:
-            label, prediction = self._parse_on_disk_model(model, af)
+            label, prediction = self._parse_on_disk_model(model, ten_af)
             return label, prediction
         except Exception as e:
             try:
-                label, prediction = self._parse_in_memory_model(model, af)
+                label, prediction = self._parse_in_memory_model(model, ten_af)
                 return label, prediction
             except Exception as e:
                 self.logger.error(e)
+                raise e
 
         return 'noise', 0
+
+    def parse_settings(self, model) -> tuple[AFTypes, float]:
+        settings = model.signatures['get_settings'](tf.constant([['1']], dtype=tf.string))
+        return AFTypes[settings['af_type'].numpy().decode("utf-8")], float(settings['duration'].numpy().decode("utf-8"))

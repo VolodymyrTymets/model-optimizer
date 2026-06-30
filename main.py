@@ -9,7 +9,7 @@ def main():
     experiments = Experiments()
     experiments.run(
         af_types=[AFTypes.mfcc],
-        argumentation_types = [ArgumentationTypes.time_shift, ArgumentationTypes.normalization, ArgumentationTypes.pitch_shift],
+        argumentation_types = [ArgumentationTypes.time_shift],
         model_setting=ExperimentDetails(
             epochs=100,
             batch_size=32,
