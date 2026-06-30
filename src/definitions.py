@@ -2,7 +2,7 @@
 
 ASSETS_PATH = 'assets'
 
-EMULATE_MODE = True
+EMULATE_MODE = False
 sr = 44000
 DURATION = 0.5
 FRAGMENT_LENGTH = int(sr / (1 / DURATION))
