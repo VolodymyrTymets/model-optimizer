@@ -1,7 +1,6 @@
 from typing import Any, Generator
 
 import tensorflow as tf
-from google.protobuf import duration
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D

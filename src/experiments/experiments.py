@@ -47,3 +47,4 @@ class Experiments():
                     duration=DURATION, labels=labels, argumentation_types=exp_argumentation_types,
                     af_type=af_type
                 ), af_strategy=af_strategy)
+            exp_argumentation_types = []
