@@ -9,7 +9,7 @@ class AssetsService(IAssetsService):
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
 
         self.out_data_set_name = 'data_set'
-        self.validation_records_folder_name = 'records'
+        self.validation_records_folder_name = 'validation-records'
         self.model_path = join(self.experiment_path, 'model')
         self.data_set_path = join(self.experiment_path, self.out_data_set_name)
 
@@ -24,7 +24,7 @@ class AssetsService(IAssetsService):
         return self.experiment_path
 
     def get_validation_records_path(self):
-        return join(self.data_set_path, self.validation_records_folder_name)
+        return join(ASSETS_PATH, self.validation_records_folder_name)
 
     def get_model_path(self):
         return self.model_path

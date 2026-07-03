@@ -6,7 +6,7 @@ from src.data_set.utils.data_set_filter import DataSetFilter
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
-from src.definitions import labels, sub_sets
+from src.definitions import labels, sub_sets, EMULATE_MODE
 from src.data_set.types import ArgumentationTypes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
@@ -26,7 +26,7 @@ class DataSetCooker:
                                                        sub_sets=sub_sets,
                                                        labels=labels)
         self.data_set_record_generator = DataSetRecordGenerator(in_path=datasets_path,
-                                                                out_path=datasets_path,
+                                                                out_path=self._asset_service.get_validation_records_path(),
                                                                 sub_sets=sub_sets, labels=labels)
         self.data_set_filter = DataSetFilter(in_path=datasets_path, out_path=datasets_path,
                                              sub_sets=sub_sets, labels=labels, af_strategy=af_strategy,
@@ -54,6 +54,8 @@ class DataSetCooker:
         self.data_set_splitter.split(duration)
 
     def _argument_data_set(self, argumentation_types=list[ArgumentationTypes]):
+        if EMULATE_MODE:
+            return
         self.logger.log(
             f'Transforming data set with argumentation types: {",".join([x.value for x in argumentation_types])}',
             color='blue')
@@ -61,15 +63,19 @@ class DataSetCooker:
                                            except_labels=[])
 
     def _generate_records(self, duration: float = 0.5, record_count: int = 10):
+        if EMULATE_MODE:
+            return
         self.logger.log(f'Generating records for train and test sets', color='blue')
         if exists(self._asset_service.get_validation_records_path()):
-            self.logger.log(f'Train records already generated', color='green')
+            self.logger.log(f'Validation records already generated', color='green')
             return
         for _ in range(record_count):
             self.data_set_record_generator.generate_test_record(duration=duration, except_sets=['train'],
                                                                 except_labels=[])
 
     def _filter_data_set(self, duration: float = 0.5):
+        if EMULATE_MODE:
+            return
         self.data_set_filter.filter(duration=duration)
 
     def prepare(self, duration: float = 0.5, argumentation_types=list[ArgumentationTypes]):

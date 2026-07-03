@@ -2,6 +2,7 @@ from typing import Sequence
 
 import tensorflow as tf
 
+from src.database.schema import ExperimentStepModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
 from src.experiment.experiment_types import IExperimentDetails
 from src.model_schema.model_schema_types import ILayerSchema, LayerSchema, LayerType, ModelSchema, IModelSchema
@@ -33,9 +34,9 @@ class LayerTuner(ILayerTuner):
     def _get_mid(self, arr: list[int]):
         return arr[len(arr) // 2]
 
-    def _get_best_units(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema, units: list[int]) -> int:
+    def _get_best_units(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema, units: list[int], unit_steps: list[ExperimentStepModel]) -> list[ExperimentStepModel]:
         if len(units) == 1:
-            return schema.layers[-1].units
+            return unit_steps
         low_units = self._get_half(units, True)
         high_units = self._get_half(units, False)
         steps = []
@@ -49,7 +50,8 @@ class LayerTuner(ILayerTuner):
         best_step = self._experiment_step.get_best_step(steps)
         best_schema = self._experiment_step.get_schema(best_step)
         next_units = low_units if best_schema.layers[-1].units in low_units else high_units
-        return self._get_best_units(data_sets, best_schema, next_units)
+        unit_steps.append(best_step)
+        return self._get_best_units(data_sets, best_schema, next_units, unit_steps)
 
     def get_best_settings(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema,
                current_layer: ILayerSchema) -> ILayerSchema:
@@ -76,17 +78,23 @@ class LayerTuner(ILayerTuner):
         return [LayerSchema(self._details.layers[0], units)]
 
     def tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema,
-               current_layer: ILayerSchema) -> ILayerSchema:
+               current_layer: ILayerSchema, append_layers_together = False) -> tuple[ILayerSchema, ExperimentStepModel]:
         # step: 1 find best settings for current layer
         settings = self.get_best_settings(data_sets, schema, current_layer)
+        new_layer = LayerSchema(current_layer.type, settings.units, settings.activation, settings.regularizer)
+        layers = schema.layers + [new_layer] if append_layers_together else [new_layer]
 
         units_schema = ModelSchema(
-            layers=schema.layers + [LayerSchema(current_layer.type, current_layer.units, settings.activation, settings.regularizer)],
+            layers=layers,
             optimizer=schema.optimizer,
             loss=schema.loss,
         )
-
+        units_steps = []
         # step: 2 find best units for current layer
-        best_count_of_units = self._get_best_units(data_sets, units_schema, self.units_range)
+        self._get_best_units(data_sets, units_schema, self.units_range, units_steps)
+        best_step = self._experiment_step.get_best_step(units_steps)
+        best_schema = self._experiment_step.get_schema(best_step)
+        best_count_of_units = best_schema.layers[-1].units
+        self._logger.log(f"    Best units for current layer {units_schema.layers[-1].type}: {best_count_of_units} found on step {best_step.step}", color="green")
         units_schema.layers[-1].units = best_count_of_units
-        return units_schema.layers[-1]
+        return units_schema.layers[-1], best_step
