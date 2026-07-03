@@ -63,19 +63,24 @@ class ModeTuner(IModeTuner):
         self._logger.log(f"schema: {str(best_schema)}")
         return best_schema
 
-    # third step: 3 ... todo: think about it, maybe argumentation, time, audio features
+    # third step: 3 final check optimizer, loss,
     def final_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
                      schema: IModelSchema) -> IModelSchema:
-        self._logger.log(f"todo:Final tuning started", color="yellow")
-        self._logger.log(f"schema: {str(schema)}", )
-        # todo: final tuning
-        # for optimizer in self._details.optimizer:
-        #     for loss in self._details.loss:
-        #         schema = ModelSchema(layers=layers, optimizer=optimizer, loss=loss)
-        #         step = self._experiment_step.run(schema, data_sets, epochs=self._details.epochs)
-        #         steps.append(step)
+        steps = []
+        for optimizer in self._details.optimizer:
+            for loss in self._details.loss:
+                schema.optimizer = optimizer
+                schema.loss = loss
+                step = self._experiment_step.run(schema, data_sets, epochs=self._details.epochs)
+                steps.append(step)
 
-        return schema
+        best_step = self._experiment_step.get_best_step(steps)
+        best_schema = self._experiment_step.get_schema(best_step)
+        self._logger.log(
+            f"Best step for final_tuning found on step {best_step.step} with accuracy {best_step.accuracy_delta}",
+            color="green")
+        self._logger.log(f"schema: {str(best_schema)}")
+        return best_schema
 
     def get_current_shema(self) -> IModelSchema:
         pass
