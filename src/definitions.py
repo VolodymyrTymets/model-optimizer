@@ -3,7 +3,7 @@ DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-opti
 
 ASSETS_PATH = 'assets'
 
-EMULATE_MODE = True
+EMULATE_MODE = False
 VALIDATION_RECORDS_COUNT = 10
 sr = 44000
 DURATION = 0.5

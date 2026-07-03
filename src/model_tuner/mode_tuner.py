@@ -29,29 +29,52 @@ class ModeTuner(IModeTuner):
         best_step = self._experiment_step.get_best_step(steps)
         best_schema = self._experiment_step.get_schema(best_step)
         self._logger.log(
-            f"[rare_tuning] Best step [{best_step.record_accuracy}, {best_step.validation_accuracy}] - {best_step.step}, with id {best_step.id}",
+            f"Best step for rare_tuning found on step {best_step.step} with accuracy {best_step.accuracy_delta}",
             color="green")
         self._logger.log(f"schema: {str(best_schema)}", )
         return best_schema
 
     # second step: 2 layers, high units, sequential activations, regularization
-    def layers_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema) -> IModelSchema:
+    def layers_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
+                      schema: IModelSchema) -> IModelSchema:
         self._logger.log(f"Layers tuning started", color="green")
+        steps = []
+        # tuning layers indiviually
         schema.layers = []
-        self._logger.log(f"schema: {str(schema)}", )
         for layer in self._details.layers:
-            self._logger.log(f"todo: Layer {layer} tuning started", color="yellow")
-            current_layer = self.layer_tuner.tuning(data_sets, schema, LayerSchema(layer, 0))
+            self._logger.log(f"Layer {','.join(x.type.value for x in schema.layers)} tuning started", color="yellow")
+            current_layer, best_step = self.layer_tuner.tuning(data_sets, schema, LayerSchema(layer, 0))
             schema.layers.append(current_layer)
+            steps.append(best_step)
+        # tuning layers together
+        schema.layers = []
+        for layer in self._details.layers:
+            self._logger.log(f"Layer {''.join(x.type.value for x in schema.layers)} tuning started", color="yellow")
+            current_layer, best_step = self.layer_tuner.tuning(data_sets, schema, LayerSchema(layer, 0), append_layers_together=True)
+            schema.layers.append(current_layer)
+            steps.append(best_step)
 
         self._logger.log(f"Layers tuning finished", color="green")
-        self._logger.log(f"schema: {str(schema)}", )
-        return schema
+        best_step = self._experiment_step.get_best_step(steps)
+        best_schema = self._experiment_step.get_schema(best_step)
+        self._logger.log(
+            f"Best step for layers_tuning found on step {best_step.step} with accuracy {best_step.accuracy_delta}",
+            color="green")
+        self._logger.log(f"schema: {str(best_schema)}")
+        return best_schema
 
     # third step: 3 ... todo: think about it, maybe argumentation, time, audio features
     def final_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
                      schema: IModelSchema) -> IModelSchema:
         self._logger.log(f"todo:Final tuning started", color="yellow")
+        self._logger.log(f"schema: {str(schema)}", )
+        # todo: final tuning
+        # for optimizer in self._details.optimizer:
+        #     for loss in self._details.loss:
+        #         schema = ModelSchema(layers=layers, optimizer=optimizer, loss=loss)
+        #         step = self._experiment_step.run(schema, data_sets, epochs=self._details.epochs)
+        #         steps.append(step)
+
         return schema
 
     def get_current_shema(self) -> IModelSchema:

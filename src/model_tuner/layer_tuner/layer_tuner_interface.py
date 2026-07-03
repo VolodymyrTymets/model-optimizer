@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
 import tensorflow as tf
+
+from src.experiment.experiment_step.experiment_step_interface import ExperimentStepModel
 from src.model_schema.model_schema_types import ILayerSchema, IModelSchema
 
 
@@ -10,5 +12,5 @@ class ILayerTuner(ABC):
         pass
 
     @abstractmethod
-    def tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema, current_layer: ILayerSchema) -> ILayerSchema:
+    def tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], schema: IModelSchema, current_layer: ILayerSchema) -> tuple[ILayerSchema, ExperimentStepModel]:
         pass
