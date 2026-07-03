@@ -10,8 +10,9 @@ from src.utils.logger.logger_service import Logger
 from src.utils.wav_files import WavFiles
 from src.utils.lists import to_chunks
 
+
 class ModelRecordEvaluator:
-    def __init__(self, model_parser: IModelResultParser ):
+    def __init__(self, model_parser: IModelResultParser):
         self.files = Files()
         self.wav_files = WavFiles()
         self.model_parser = model_parser
@@ -44,20 +45,22 @@ class ModelRecordEvaluator:
         chunks = [x for x in to_chunks(waveform, int(FRAGMENT_LENGTH))]
         rate_per_chunk = 100 / len(chunks)
         evaluate_rate = 0
-
+        annotation_timestamps = [
+            annotations[label] for label in labels
+        ]
         for chunk in chunks:
             duration = 1 / sr * len(chunk)
-            start = timestamp
-            end = timestamp + duration
+            start = round(timestamp)
+            end = round(timestamp + duration)
             line_label, prediction = self.model_parser.parse(model, chunk)
             model_annotation.append([start, end, line_label])
-            annotation_label = labels[0]
-            for key in annotations.keys():
-                timestamps = annotations[key]
-                if self.is_in_timestamp(start, end, timestamps):
-                    annotation_label = key
-                    break
-            chunk_evaluate_rate = rate_per_chunk if line_label == annotation_label else 0
+            annotation_timestamp = annotation_timestamps[labels.index(line_label)]
+            chunk_evaluate_rate = 0
+            if self.is_in_timestamp(start, end, annotation_timestamp):
+                chunk_evaluate_rate = rate_per_chunk
+            else:
+                self.loger.log(f'Annotation not found for {file_path} at {start} - {end}: {line_label}', color='red')
+                self.loger.log(f'Annotation: {annotation_timestamp}', color='red')
             timestamp += duration
             evaluate_rate += chunk_evaluate_rate
         self.loger.log(f'Record labels: {file_path}:')
