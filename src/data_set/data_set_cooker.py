@@ -26,7 +26,7 @@ class DataSetCooker:
                                                        sub_sets=sub_sets,
                                                        labels=labels)
         self.data_set_record_generator = DataSetRecordGenerator(in_path=datasets_path,
-                                                                out_path=datasets_path,
+                                                                out_path=self._asset_service.get_validation_records_path(),
                                                                 sub_sets=sub_sets, labels=labels)
         self.data_set_filter = DataSetFilter(in_path=datasets_path, out_path=datasets_path,
                                              sub_sets=sub_sets, labels=labels, af_strategy=af_strategy,
