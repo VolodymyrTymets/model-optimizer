@@ -1,8 +1,6 @@
 import datetime
 from typing import List
 from typing import Optional
-from sqlalchemy import Table
-from sqlalchemy import Column
 import sqlalchemy as sa
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase
@@ -14,14 +12,6 @@ from sqlalchemy.orm import relationship
 class Base(DeclarativeBase):
     id: Mapped[int] = mapped_column(primary_key=True)
     createdAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), default=datetime.datetime.now)
-
-
-results_on_experiment_step_association_table = Table(
-    "results_on_experiment_step_association_table",
-    Base.metadata,
-    Column("experiment_step_id", ForeignKey("experiment_step.id"), primary_key=True),
-    Column("image_id", ForeignKey("image.id"), primary_key=True),
-)
 
 
 class ExperimentModel(Base):
@@ -87,7 +77,7 @@ class ExperimentStepModel(Base):
     schema: Mapped["ModelSchemaModel"] = relationship(back_populates="step")
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")
     training_history_plot: Mapped[Optional["ImageModel"]] = relationship(back_populates="training_history_plots")
-    results: Mapped[List["ImageModel"]] = relationship(secondary=results_on_experiment_step_association_table)
+    record_results: Mapped[Optional[List["RecordResultModel"]]] = relationship(back_populates="experiment_step")
 
 
 class ModelSchemaModel(Base):
@@ -129,4 +119,15 @@ class ImageModel(Base):
 
     training_history_plots: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="training_history_plot")
     model_schemas: Mapped[List["ModelSchemaModel"]] = relationship(back_populates="plot")
-    result_images: Mapped[List["ExperimentStepModel"]] =  relationship(secondary=results_on_experiment_step_association_table)
+    record_results: Mapped[List["RecordResultModel"]] = relationship(back_populates="image")
+
+class RecordResultModel(Base):
+    __tablename__ = "record_result"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    experiment_step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
+    image_id: Mapped[int] = mapped_column(ForeignKey("image.id"))
+    accuracy: Mapped[float] = mapped_column(sa.Float)
+    name: Mapped[str] = mapped_column(sa.String)
+
+    experiment_step: Mapped["ExperimentStepModel"] = relationship(back_populates="record_results")
+    image: Mapped["ImageModel"] = relationship(back_populates="record_results")

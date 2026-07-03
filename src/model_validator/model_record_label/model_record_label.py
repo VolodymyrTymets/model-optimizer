@@ -76,7 +76,7 @@ class ModelRecordLabeler(IModelRecordLabeler):
 
         return self._save_plot(file_name, segments, colors, line_labels)
 
-    def label_records(self, model: tf.keras.Model, from_path: str) -> Generator[str, Any, None]:
+    def label_records(self, model: tf.keras.Model, from_path: str) -> Generator[tuple[str, str], Any, None]:
         for file in self.files.get_only_files(from_path):
             if file.endswith('.wav'):
-                yield self.label_record(model, self.files.join(from_path, file), file)
+                yield self.label_record(model, self.files.join(from_path, file), file), file.replace('.wav', '')

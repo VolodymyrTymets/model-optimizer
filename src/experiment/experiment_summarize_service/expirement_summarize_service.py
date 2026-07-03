@@ -21,7 +21,7 @@ from src.model_validator.model_result_parser.model_result_parser import ModelRes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_exporter import ModelExporter
-from src.database.schema import ExperimentModel, ImageModel
+from src.database.schema import ExperimentModel, ImageModel, RecordResultModel
 
 
 class ExperimentSummarizeService(IExperimentSummarizeService):
@@ -69,21 +69,29 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         model = self.mode_builder.build_model(best_schema, train_ds)
         model = self.model_weights_service.import_weights(model, best_step.step)
         model, history = self.mode_trainer.train(model, train_ds, val_ds, self._details.epochs)
-        record_acc, validation_acc = self.mode_validator.validate(model=model, data=test_ds,
-                                                                  validation_records_path=self.assets_service.get_validation_records_path())
+        record_acc, validation_acc, record_acc_dic = self.mode_validator.validate(model=model, data=test_ds,
+                                                                                  validation_records_path=self.assets_service.get_validation_records_path())
         if EMULATE_MODE is False:
+            record_results = []
+            record_images = []
             # generate results and save them locally
-            record_path = [x for x in self.model_record_label_service.label_records(model=model,
-                                                                                    from_path=self.assets_service.get_validation_records_path())]
+            for image_path, name in self.model_record_label_service.label_records(model=model,
+                                                                                  from_path=self.assets_service.get_validation_records_path()):
+                record_images.append(image_path)
+                record_results.append(RecordResultModel(
+                    experiment_step_id=best_step.id,
+                    image=self._get_image_model(path=image_path),
+                    name=name,
+                    accuracy=float(record_acc_dic.get(name, 0)),
+                ))
+
             self.model_exporter.export_model(model, path=self.assets_service.get_model_path(), labels=labels)
             mode_plot_path = self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())
             training_plot_path = self.model_exporter.export_training_plot(history,
                                                                           path=self.assets_service.get_model_path())
 
             # save results to database
-            self._experiment_step_model_service.save_results(step_id=best_step.id,
-                                                             results=[self._get_image_model(path=x) for x in
-                                                                      record_path])
+            self._experiment_step_model_service.save_record_results(results=record_results)
             self._experiment_step_model_service.save_schema_plot(step_id=best_step.id,
                                                                  schema_plot=self._get_image_model(path=mode_plot_path))
             self._experiment_step_model_service.save_training_history_plot(step_id=best_step.id,

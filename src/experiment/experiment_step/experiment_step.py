@@ -54,7 +54,7 @@ class ExperimentStep(IExperimentStep):
         self._model_weights_service.export_weights(model, existed_step.step)
 
         model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
-        record_acc, valid_acc = self._mode_validator.validate(model, test_ds, self.assets_service.get_validation_records_path())
+        record_acc, valid_acc, _ = self._mode_validator.validate(model, test_ds, self.assets_service.get_validation_records_path())
         self._experiment_step_model_service.finish_experiment_step(self.experiment_id,
                                                                    schema, record_acc,
                                                                    valid_acc, history)

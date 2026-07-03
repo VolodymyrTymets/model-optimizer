@@ -7,9 +7,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.database.schema import Base
-
-# Default local store for experiment-progress logging.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer"
+from src.definitions import DEFAULT_DATABASE_URL
 
 
 class DBClient:
