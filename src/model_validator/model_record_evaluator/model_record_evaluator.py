@@ -66,10 +66,12 @@ class ModelRecordEvaluator:
 
     def evaluate_records(self, model: tf.keras.Model, from_path: str):
         test_record_acc = []
+        file_names = []
         for file in self.files.get_only_files(from_path):
             if file.endswith('.wav'):
                 record_acc = self.evaluate_record(model, self.files.join(from_path, file))
                 test_record_acc.append(record_acc)
+                file_names.append(file.replace('.wav', ''))
         mean_acc = np.mean(test_record_acc)
         self.loger.log(f'Mean records accuracy: {mean_acc}%', color='blue')
-        return float(mean_acc)
+        return float(mean_acc), dict(zip(file_names, test_record_acc))

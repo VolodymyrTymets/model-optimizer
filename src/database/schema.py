@@ -1,5 +1,6 @@
 import datetime
 from typing import List
+from typing import Optional
 import sqlalchemy as sa
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase
@@ -12,19 +13,20 @@ class Base(DeclarativeBase):
     id: Mapped[int] = mapped_column(primary_key=True)
     createdAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), default=datetime.datetime.now)
 
+
 class ExperimentModel(Base):
-     __tablename__ = "experiment"
+    __tablename__ = "experiment"
 
-     endAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), nullable=True)
+    endAt: Mapped[datetime.datetime] = mapped_column(sa.DateTime(timezone=True), nullable=True)
 
-     details: Mapped["ExperimentDetailsModel"] = relationship(back_populates="experiment")
-     data_set_details: Mapped["ExperimentDataSetDetailsModel"] = relationship(back_populates="experiment")
-     steps: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="experiment")
-     model_schemas: Mapped[List["ModelSchemaModel"]] = relationship(back_populates="experiment")
-     model_layers: Mapped[List["ModelLayerModel"]] = relationship(back_populates="experiment")
+    details: Mapped["ExperimentDetailsModel"] = relationship(back_populates="experiment")
+    data_set_details: Mapped["ExperimentDataSetDetailsModel"] = relationship(back_populates="experiment")
+    steps: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="experiment")
+    model_schemas: Mapped[List["ModelSchemaModel"]] = relationship(back_populates="experiment")
+    model_layers: Mapped[List["ModelLayerModel"]] = relationship(back_populates="experiment")
 
-     def __repr__(self) -> str:
-         return f"<ExperimentModel(id={self.id!r}), endAt={self.endAt!r}>"
+    def __repr__(self) -> str:
+        return f"<ExperimentModel(id={self.id!r}), endAt={self.endAt!r}>"
 
 
 class ExperimentDetailsModel(Base):
@@ -45,6 +47,7 @@ class ExperimentDetailsModel(Base):
     def __repr__(self):
         return f"ExperimentDetailsModel(epochs={int(self.epochs)}, batch_size={int(self.batch_size)}, layers={self.layers}, activation={self.activation}, optimizer={self.optimizer}, regularizer={self.regularizer}, loss={self.loss}, units_range={self.units_range})"
 
+
 class ExperimentDataSetDetailsModel(Base):
     __tablename__ = "experiment_data_set_details"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -55,6 +58,7 @@ class ExperimentDataSetDetailsModel(Base):
     af_type: Mapped[str] = mapped_column(sa.String)
 
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="data_set_details")
+
 
 class ExperimentStepModel(Base):
     __tablename__ = "experiment_step"
@@ -68,9 +72,12 @@ class ExperimentStepModel(Base):
     validation_accuracy: Mapped[float] = mapped_column(sa.Float, default=0)
     accuracy_delta: Mapped[float] = mapped_column(sa.Float, default=0)
     epochs: Mapped[int] = mapped_column(sa.Integer, default=0)
+    training_history_plot_id: Mapped[Optional[int]] = mapped_column(ForeignKey("image.id"), nullable=True)
 
     schema: Mapped["ModelSchemaModel"] = relationship(back_populates="step")
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")
+    training_history_plot: Mapped[Optional["ImageModel"]] = relationship(back_populates="training_history_plots")
+    record_results: Mapped[Optional[List["RecordResultModel"]]] = relationship(back_populates="experiment_step")
 
 
 class ModelSchemaModel(Base):
@@ -84,9 +91,12 @@ class ModelSchemaModel(Base):
 
     step: Mapped["ExperimentStepModel"] = relationship(back_populates="schema")
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_schemas")
+    plot_id: Mapped[Optional[int]] = mapped_column(ForeignKey("image.id"), nullable=True)
+    plot: Mapped[Optional["ImageModel"]] = relationship(back_populates="model_schemas")
 
     def __repr__(self):
         return f"<ModelSchemaModel(id={self.id}, optimizer={self.optimizer}, loss={self.loss})>"
+
 
 class ModelLayerModel(Base):
     __tablename__ = "model_layer"
@@ -100,3 +110,24 @@ class ModelLayerModel(Base):
 
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_layers")
     model_schema: Mapped["ModelSchemaModel"] = relationship(back_populates="model_layers")
+
+
+class ImageModel(Base):
+    __tablename__ = "image"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    base64: Mapped[str] = mapped_column(sa.String)
+
+    training_history_plots: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="training_history_plot")
+    model_schemas: Mapped[List["ModelSchemaModel"]] = relationship(back_populates="plot")
+    record_results: Mapped[List["RecordResultModel"]] = relationship(back_populates="image")
+
+class RecordResultModel(Base):
+    __tablename__ = "record_result"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    experiment_step_id: Mapped[int] = mapped_column(ForeignKey("experiment_step.id"))
+    image_id: Mapped[int] = mapped_column(ForeignKey("image.id"))
+    accuracy: Mapped[float] = mapped_column(sa.Float)
+    name: Mapped[str] = mapped_column(sa.String)
+
+    experiment_step: Mapped["ExperimentStepModel"] = relationship(back_populates="record_results")
+    image: Mapped["ImageModel"] = relationship(back_populates="record_results")

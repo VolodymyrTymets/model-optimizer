@@ -3,7 +3,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
-from src.utils.audio_features.types import AFTypes
 from src.utils.files import Files
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_instance.model_instance import ModelInstance
@@ -33,12 +32,14 @@ class ModelExporter:
         return tf.saved_model.load(export_dir=path)
 
     def export_model_plot(self, model, path: str):
-        tf.keras.utils.plot_model(model, to_file=
-        self.files.join(self._get_export_path(path), 'model_plot.png'), show_shapes=True, show_layer_names=True,
+        to_file = self.files.join(self._get_export_path(path), 'model_plot.png')
+        tf.keras.utils.plot_model(model, to_file=to_file, show_shapes=True, show_layer_names=True,
                                   show_layer_activations=True,
                                   show_trainable=True)
+        return to_file
 
     def export_training_plot(self, history: tf.keras.callbacks.History, path: str):
+        to_file = self.files.join(self._get_export_path(path), 'training_plot.png')
         metrics, epoch = history.history, range(1, len(history.history['loss']) + 1)
         plt.rcParams.update({
             'font.size': 18,
@@ -59,4 +60,5 @@ class ModelExporter:
         plt.ylabel('Accuracy [%]')
 
         self.files.create_folder(self._get_export_path(path))
-        plt.savefig(self.files.join(self._get_export_path(path), 'training_history.png'))
+        plt.savefig(to_file)
+        return to_file

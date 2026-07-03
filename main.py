@@ -8,8 +8,8 @@ from src.utils.audio_features.types import AFTypes
 def main():
     experiments = Experiments()
     experiments.run(
-        af_types=[AFTypes.mfcc],
-        argumentation_types = [ArgumentationTypes.time_shift],
+        af_types=[AFTypes.mfcc, AFTypes.mel, AFTypes.stft],
+        argumentation_types = [ArgumentationTypes.time_shift, ArgumentationTypes.pitch_shift, ArgumentationTypes.time_stretch, ArgumentationTypes.normalization],
         model_setting=ExperimentDetails(
             epochs=100,
             batch_size=32,

@@ -16,12 +16,11 @@ class ModeValidator(IModeValidator):
         self.model_record_evaluator = ModelRecordEvaluator(model_parser=ModelResultParser(af_strategy=af_strategy))
 
     def validate(self, model: tf.keras.Model, data: tf.data.Dataset, validation_records_path: str) -> tuple[
-        float, float]:
+        float, float, dict[str, float]]:
         if EMULATE_MODE:
             record_acc, validation_acc = random.randint(1, 100), random.randint(1, 100)  # simulate validation process
-            return record_acc, validation_acc
-        evaluation = model.evaluate(data)
-        test_acc, test_loss = evaluation
-        validation_acc = self.model_record_evaluator.evaluate_records(model=model, from_path=validation_records_path)
-        record_acc = test_acc
-        return record_acc, validation_acc
+            return record_acc, validation_acc, {"test": 0}
+        loss, accuracy = model.evaluate(data)
+        validation_acc = accuracy * 100
+        record_acc, record_acc_dic = self.model_record_evaluator.evaluate_records(model=model, from_path=validation_records_path)
+        return record_acc, validation_acc, record_acc_dic

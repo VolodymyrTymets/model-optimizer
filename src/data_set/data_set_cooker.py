@@ -10,7 +10,7 @@ from src.definitions import labels, sub_sets
 from src.data_set.types import ArgumentationTypes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
-from src.definitions import ASSETS_PATH
+from src.definitions import ASSETS_PATH, VALIDATION_RECORDS_COUNT
 
 
 class DataSetCooker:
@@ -77,4 +77,4 @@ class DataSetCooker:
         self._split_data_set(duration)
         self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
-        self._generate_records(duration, record_count=10)
+        self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT)
