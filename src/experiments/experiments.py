@@ -32,8 +32,8 @@ class Experiments():
 
         experiment.start((train_ds, val_ds, test_ds))
         experiment.summarize((train_ds, val_ds, test_ds), labels=label_names)
-        raise Exception("!!! STOP")
-        #experiment.finish()
+        # raise Exception("!!! STOP")
+        experiment.finish()
 
     def run(self, af_types: list[AFTypes], argumentation_types: list[ArgumentationTypes],
             model_setting: IExperimentDetails):
