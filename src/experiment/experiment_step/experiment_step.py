@@ -50,10 +50,15 @@ class ExperimentStep(IExperimentStep):
         else:
             existed_step = self._experiment_step_model_service.start_experiment_step(self.experiment_id,
                                                                                      step, schema)
-        model = self._model_builder.build_model(schema, train_ds)
-        self._model_weights_service.export_weights(model, existed_step.step)
+        try:
+            model = self._model_builder.build_model(schema, train_ds)
+            self._model_weights_service.export_weights(model, existed_step.step)
 
-        model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
+            model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
+        except Exception as e:
+            self._logger.log(f"[{step}]Experiment step training failed", color="red")
+            self._logger.error(e)
+            return existed_step
         record_acc, valid_acc, _ = self._mode_validator.validate(model, test_ds, self.assets_service.get_validation_records_path())
         self._experiment_step_model_service.finish_experiment_step(self.experiment_id,
                                                                    schema, record_acc,

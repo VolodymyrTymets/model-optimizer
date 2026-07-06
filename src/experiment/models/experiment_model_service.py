@@ -2,7 +2,7 @@ import datetime
 from typing import Optional
 
 from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel, \
-    ExperimentDataSetDetailsModel
+    ExperimentDataSetDetailsModel, ExperimentStepModel as DBExperimentStepModel
 from src.database.db_client import DBClient
 from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails, \
     ExperimentDataSetDetails
@@ -68,6 +68,10 @@ class ExperimentModelService:
     def finish_experiment(self, experiment_id: int):
         self._logger.log("Finishing experiment...", color="green")
         with self.db_client.session_scope() as session:
+            not_finished_steps = session.query(DBExperimentStepModel).filter(DBExperimentStepModel.experiment_id == experiment_id, DBExperimentStepModel.endAt == None).count()
+            if not_finished_steps > 0:
+                self._logger.log("Experiment has not finished steps", color="yellow")
+                return False
             session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).update(
                 {DBExperimentModel.endAt: datetime.datetime.now()})
             session.commit()
