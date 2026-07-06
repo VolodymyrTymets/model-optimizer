@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
 import tensorflow as tf
-import numpy as np
+from abc import ABC, abstractmethod
+
 
 
 class IModelRecordLabeler(ABC):

@@ -1,6 +1,8 @@
+import tensorflow as tf
+
 from abc import ABC, abstractmethod
 
-import tensorflow as tf
+
 
 
 class IModeTrainer(ABC):

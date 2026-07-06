@@ -1,5 +1,5 @@
-import numpy as np
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras import layers
 
 from src.assets_service.assets_service import AssetsService

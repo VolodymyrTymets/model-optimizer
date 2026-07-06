@@ -1,5 +1,6 @@
-import base64
 import tensorflow as tf
+
+import base64
 from os.path import join
 
 from src.assets_service.assets_service_interface import IAssetsService

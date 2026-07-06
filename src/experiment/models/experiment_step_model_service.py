@@ -1,5 +1,5 @@
-import datetime
 import tensorflow as tf
+import datetime
 from typing import List
 from sqlalchemy.orm import selectinload
 
@@ -106,7 +106,6 @@ class ExperimentStepModelService:
             best = session.query(ExperimentStepModel).where(
                 ExperimentStepModel.experiment_id == experiment_id).order_by(
                 ExperimentStepModel.accuracy_delta.desc()).first()
-            print('BEST STEP ID:', best.id)
             return best
 
     def save_schema_plot(self, step_id: int, schema_plot: ImageModel):

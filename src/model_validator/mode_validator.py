@@ -1,6 +1,5 @@
-import random
-
 import tensorflow as tf
+import random
 
 from src.definitions import EMULATE_MODE
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy

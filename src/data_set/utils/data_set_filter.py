@@ -1,5 +1,5 @@
-import shutil
 import tensorflow as tf
+import shutil
 from src.data_set.utils.data_set_splitter import DataSetFileWorker
 from src.model_validator.model_result_parser.model_result_parser import ModelResultParser
 from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFactory
@@ -39,6 +39,7 @@ class DataSetFilter(DataSetFileWorker):
 
     def filter(self, duration: float):
         self.logger.log('Start filtering', color='blue')
+        # todo: add model build from best step
         model = self._get_model(duration)
         if not model:
             self.logger.log('Model not found. Filtering skipped.', color='red')

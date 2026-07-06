@@ -1,6 +1,6 @@
-from typing import Sequence
-
 import tensorflow as tf
+
+from typing import Sequence
 
 from src.database.schema import ExperimentStepModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep

@@ -1,6 +1,7 @@
+import tensorflow as tf
 import numpy as np
 from src.definitions import FRAGMENT_LENGTH, labels
-import tensorflow as tf
+
 
 from src.utils.audio_features.types import AFTypes
 from src.utils.lists import pad_list

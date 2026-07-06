@@ -1,6 +1,5 @@
-from abc import ABC, abstractmethod
-
 import tensorflow as tf
+from abc import ABC, abstractmethod
 
 
 
