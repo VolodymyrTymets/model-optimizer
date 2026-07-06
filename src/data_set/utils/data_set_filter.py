@@ -1,5 +1,15 @@
 import tensorflow as tf
 import shutil
+from src.data_set.data_set_importer import DataSetImporter
+from src.utils.files import Files
+
+from src.experiment.experiment_step.experiment_step import ExperimentStep
+from src.experiment.models.experiment_model_service import ExperimentModelService
+from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
+from src.model_builder.mode_builder import ModeBuilder
+from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
+from src.model_trainer.mode_trainer import ModeTrainer
+
 from src.data_set.utils.data_set_splitter import DataSetFileWorker
 from src.model_validator.model_result_parser.model_result_parser import ModelResultParser
 from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFactory
@@ -9,52 +19,127 @@ from src.definitions import FRAGMENT_LENGTH, sr, frame_length, hop_length
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 
 
+class LocalModelLoader:
+    def __init__(self, af_strategy: IAFStrategy, assets_service: IAssetsService,
+                 model_parser: ModelResultParser):
+        self.assets_service = assets_service
+        self.files = Files()
+        self.logger = Logger('DataSetLocalFilter')
+        self.model_parser = model_parser
+        self.af_strategy = af_strategy
+
+    def _get_af_strategy(self, model):
+        try:
+            af_type, _ = self.model_parser.parse_settings(model=model)
+            if af_type and af_type.value != self.af_strategy.AFType.value:
+                self.logger.log(f'Changing audio feature strategy to {af_type.value}', color='yellow')
+                return AFStrategyFactory(sr=sr, frame_length=frame_length,
+                                         hop_length=hop_length).create_strategy(strategy_type=af_type)
+        except Exception as e:
+            self.logger.log(f'Error in model settings parsing: {e}', color='red')
+
+    def get_model(self, duration: float):
+        model_path = self.files.join(self.assets_service.get_assets_path(), 'models', f'model_{duration}')
+        if not self.files.is_exist(model_path):
+            return None, None
+        model = tf.keras.models.load_model(model_path)
+
+        return model, self._get_af_strategy(model)
+
+    def is_filtered(self, db_path: str):
+        return self.files.is_exist(self.files.join(db_path, '__filtered__'))
+
+    def finish(self, db_path: str):
+        self.files.create_folder(self.files.join(db_path, '__filtered__'))
+
+
+
+class InMemoryModelLoader:
+    def __init__(self, experiment_id: int, af_strategy: IAFStrategy, assets_service: IAssetsService, ):
+        self.experiment_id = experiment_id
+        self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
+        self.mode_builder = ModeBuilder(logger=Logger('ModeBuilder'))
+        self.mode_trainer = ModeTrainer(logger=Logger('ModeTrainer'))
+
+        self._experiment_step = ExperimentStep(experiment_id, af_strategy)
+        self.model_weights_service = ModelWeightsExporter(assets_service)
+        self.af_strategy = af_strategy
+        self.files = Files()
+        self.logger = Logger('DataSetInMemoryFilter')
+
+    def _get_best_step(self):
+        return self._experiment_step_model_service.get_best_step(self.experiment_id)
+
+    def is_filtered(self, db_path: str):
+        best_step = self._get_best_step()
+        path = self.files.join(db_path, '__filtered__')
+        if self.files.is_exist(path):
+            if not self.files.is_exist(self.files.join(path,"accuracy.txt")):
+                self.logger.log(f'No accuracy file found for {db_path}', color='red')
+                return False
+            with open(self.files.join(path,"accuracy.txt"), "r", encoding="utf-8") as file:
+                content = file.read()
+                return best_step.accuracy_delta <= float(content.strip())
+        return False
+
+    def finish(self, db_path: str):
+        best_step = self._get_best_step()
+        path = self.files.join(db_path, '__filtered__')
+        self.files.create_folder(path)
+        with open(self.files.join(path,"accuracy.txt"), "w", encoding="utf-8") as file:
+            file.write(str(best_step.accuracy_delta) + "\n")
+
+    def get_model(self, duration: float):
+        data_set_importer = DataSetImporter(experiment_id=self.experiment_id, duration=duration,
+                                            af_strategy=self.af_strategy)
+        train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
+        best_step = self._get_best_step()
+        if best_step is None:
+            return None, None
+        self.logger.log(f'Loading model from step {best_step.step} with ac {best_step.accuracy_delta}', color='blue')
+        best_schema = self._experiment_step.get_schema(step=best_step)
+        model = self.mode_builder.build_model(best_schema, train_ds)
+        model = self.model_weights_service.import_weights(model, best_step.step)
+        self.logger.log(f'Starting training...', color='blue')
+        model, history = self.mode_trainer.train(model, train_ds, val_ds, 100)
+        return model, None
+
+
 class DataSetFilter(DataSetFileWorker):
     def __init__(self, in_path: str, out_path: str, sub_sets: list[str], labels: list[str],
-                 assets_service: IAssetsService, af_strategy: IAFStrategy):
+                 assets_service: IAssetsService, af_strategy: IAFStrategy, experiment_id: int, localModel=False):
         super().__init__(in_path=in_path, out_path=out_path, sub_sets=sub_sets, labels=labels)
         self.assets_service = assets_service
+        self.experiment_id = experiment_id
         self.af_strategy = af_strategy
         self.model_parser = ModelResultParser(af_strategy=self.af_strategy)
         self.logger = Logger('DataSetFilter')
         self.except_sets = []
         self.except_labels = []
-
-    def _get_model(self, duration: float):
-        model_path = self.files.join(self.assets_service.get_assets_path(), 'models', f'model_{duration}')
-        if not self.files.is_exist(model_path):
-            return None
-        return tf.saved_model.load(model_path)
-
-    def init_proper_af_strategy(self, model):
-        try:
-            af_type, _ = self.model_parser.parse_settings(model=model)
-            if af_type and af_type.value != self.af_strategy.AFType.value:
-                self.logger.log(f'Changing audio feature strategy to {af_type.value}', color='yellow')
-                self.af_strategy = AFStrategyFactory(sr=sr, frame_length=frame_length,
-                                                hop_length=hop_length).create_strategy(strategy_type=af_type)
-                self.model_parser = ModelResultParser(af_strategy=self.af_strategy)
-        except Exception as e:
-            self.logger.log(f'Error in model settings parsing: {e}', color='red')
-
-    def is_filtered(self):
-        return self.files.is_exist(self.files.join(self.out_path, '__filtered__'))
+        self.assets_service = assets_service
+        self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
+        self.model_loader = LocalModelLoader(af_strategy=self.af_strategy,
+                                             assets_service=self.assets_service,
+                                             model_parser=self.model_parser) if localModel else InMemoryModelLoader(
+            af_strategy=self.af_strategy, assets_service=self.assets_service, experiment_id=self.experiment_id)
 
     def finish(self):
         self.logger.log('Finishing', color='blue')
-        self.files.create_folder(self.files.join(self.out_path, '__filtered__'))
+        self.model_loader.finish(self.out_path)
 
     def filter(self, duration: float):
         self.logger.log('Start filtering', color='blue')
-        if self.is_filtered():
+        if self.model_loader.is_filtered(self.out_path):
             self.logger.log('Filtering already done. Skipping.', color='blue')
             return
-        # todo: add model build from best step
-        model = self._get_model(duration)
+
+        model, filter_af_strategy = self.model_loader.get_model(duration)
         if not model:
             self.logger.log('Model not found. Filtering skipped.', color='red')
             return
-        self.init_proper_af_strategy(model)
+        if filter_af_strategy is not None:
+            self.model_parser = ModelResultParser(af_strategy=filter_af_strategy)
+
         for signal, sr, set_name, label, path, file in self.read_data_set(log=False):
             if set_name in self.except_sets:
                 continue

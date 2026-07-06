@@ -29,7 +29,7 @@ class DataSetCooker:
                                                                 sub_sets=sub_sets, labels=labels)
         self.data_set_filter = DataSetFilter(in_path=datasets_path, out_path=datasets_path,
                                              sub_sets=sub_sets, labels=labels, af_strategy=af_strategy,
-                                             assets_service=self._asset_service)
+                                             assets_service=self._asset_service, experiment_id=experiment_id)
 
         self.logger = Logger('DataSet')
 

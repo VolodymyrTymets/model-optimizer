@@ -42,13 +42,13 @@ class ExperimentStep(IExperimentStep):
         train_ds, val_ds, test_ds = data_sets
         step = self._experiment_step_model_service.find(self.experiment_id, schema)
 
-        self._logger.log(f"[{step.step}]Experiment step started", color="blue")
         if step is None:
             latest_step = self._experiment_step_model_service.get_last_step(self.experiment_id) + 1
             step = self._experiment_step_model_service.start_experiment_step(self.experiment_id,  latest_step, schema)
         elif step.endAt is not None and step.accuracy_delta > 0:
             self._logger.log(f"[{step.step}]Experiment step already finished", color="yellow")
             return step
+        self._logger.log(f"[{step.step}]Experiment step started", color="blue")
 
         try:
             model = self._model_builder.build_model(schema, train_ds)

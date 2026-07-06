@@ -102,7 +102,7 @@ class ExperimentModelService:
 
     def get_data_set_details(self, experiment_id: int) -> IExperimentDataSetDetails:
         with self.db_client.session_scope() as session:
-            details = session.query(ExperimentDataSetDetailsModel).filter(DBExperimentModel.id == experiment_id).first()
+            details = session.query(ExperimentDataSetDetailsModel).filter(ExperimentDataSetDetailsModel.experiment_id == experiment_id).first()
             return ExperimentDataSetDetails(
                 labels=details.labels,
                 duration=details.duration,
