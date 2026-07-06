@@ -28,11 +28,16 @@ class Experiment(IExperiment):
     def get_experiment_id(self) -> int:
         return self._experiment_model.id
 
+    def is_finished(self) -> bool:
+        return self._experiment_model.endAt is not None
+
     def start(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> IModelSchema:
-        self._logger.log("Experiment started")
+
         if self._experiment_model.endAt is not None:
             self._logger.log("Experiment already finished", color="yellow")
             return self.experiment_summary_service.get_best_step_schema(experiment_id=self._experiment_model.id)
+
+        self._logger.log("Experiment started for", self._experiment_model.id)
 
         schema = self.model_tuner.rare_tuning(data_sets)
         schema = self.model_tuner.layers_tuning(data_sets, schema)
