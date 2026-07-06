@@ -1,14 +1,14 @@
+import os
 from src.data_set.types import ArgumentationTypes
 from src.experiment.experiment_types import ExperimentDetails
 from src.experiments.experiments import Experiments
 from src.model_schema.model_schema_types import LayerType, OptimizerType, RegularizerType, LossType, ActivationType
 from src.utils.audio_features.types import AFTypes
 
-
 def main():
     experiments = Experiments()
     experiments.run(
-        af_types=[AFTypes.mfcc, AFTypes.mel, AFTypes.stft],
+        af_types=[AFTypes.stft],
         argumentation_types = [ArgumentationTypes.time_shift, ArgumentationTypes.pitch_shift, ArgumentationTypes.time_stretch, ArgumentationTypes.normalization],
         model_setting=ExperimentDetails(
             epochs=100,
@@ -19,7 +19,8 @@ def main():
             optimizer=[OptimizerType.Adam, OptimizerType.AdamW],
             regularizer=[RegularizerType.L1, RegularizerType.L2],
             loss=[LossType.SparseCategoricalCrossentropy],
-        )
+        ),
+        train=True,
     )
 
 if __name__ == "__main__":
