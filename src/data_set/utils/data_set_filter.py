@@ -37,8 +37,18 @@ class DataSetFilter(DataSetFileWorker):
         except Exception as e:
             self.logger.log(f'Error in model settings parsing: {e}', color='red')
 
+    def is_filtered(self):
+        return self.files.is_exist(self.files.join(self.out_path, '__filtered__'))
+
+    def finish(self):
+        self.logger.log('Finishing', color='blue')
+        self.files.create_folder(self.files.join(self.out_path, '__filtered__'))
+
     def filter(self, duration: float):
         self.logger.log('Start filtering', color='blue')
+        if self.is_filtered():
+            self.logger.log('Filtering already done. Skipping.', color='blue')
+            return
         # todo: add model build from best step
         model = self._get_model(duration)
         if not model:
@@ -61,3 +71,4 @@ class DataSetFilter(DataSetFileWorker):
                     shutil.move(from_path, to_path)
 
         self.logger.log('End filtering', color='blue')
+        self.finish()

@@ -23,6 +23,8 @@ class Experiments():
             data_set_details=data_set_details,
             af_strategy=af_strategy
         )
+        if experiment.is_finished():
+            return
         data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id(), af_strategy=af_strategy)
         data_set_cooker.prepare(duration=DURATION, argumentation_types=[])
 

@@ -1,10 +1,11 @@
 import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel, \
     ExperimentDataSetDetailsModel
 from src.database.db_client import DBClient
-from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails
+from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails, \
+    ExperimentDataSetDetails
 from src.model_schema.model_schema_types import LayerType, ActivationType, OptimizerType, RegularizerType, LossType
 from src.utils.logger.logger_interface import ILogger
 
@@ -31,7 +32,8 @@ class ExperimentModelService:
         ).all()
         experiment_data_set_details_ids = [x.id for x in _experiment_data_set_details]
         uniq = set(experiment_details_ids).intersection(set(experiment_data_set_details_ids))
-        experiment_id = uniq.pop() if len(uniq) > 0 else None
+        experiment_id = next(iter(uniq)) if len(uniq) > 0 else None
+
         if experiment_id is not None:
             return session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).first()
         return None
@@ -75,14 +77,14 @@ class ExperimentModelService:
                                data_set_details: IExperimentDataSetDetails):
         with self.db_client.session_scope() as session:
             latest = self._get_current_experiment(session, experiment_details, data_set_details)
-            if latest is not None and latest.endAt is None:
+            if latest is not None:
                 self._logger.log("Found not finished experiment", color="yellow")
                 return latest
             return self._create(experiment_details, data_set_details)
 
-    def get_details(self, experiment: DBExperimentModel) -> IExperimentDetails:
+    def get_details(self, experiment_id: int) -> IExperimentDetails:
         with self.db_client.session_scope() as session:
-            details = session.query(ExperimentDetailsModel).filter(DBExperimentModel.id == experiment.id).first()
+            details = session.query(ExperimentDetailsModel).filter(DBExperimentModel.id == experiment_id).first()
             return ExperimentDetails(
                 epochs=details.epochs,
                 batch_size=details.batch_size,
@@ -93,3 +95,14 @@ class ExperimentModelService:
                 regularizer=[RegularizerType(x) for x in details.regularizer.split(',')],
                 loss=[LossType(x) for x in details.loss.split(',')],
             )
+
+    def get_data_set_details(self, experiment_id: int) -> IExperimentDataSetDetails:
+        with self.db_client.session_scope() as session:
+            details = session.query(ExperimentDataSetDetailsModel).filter(DBExperimentModel.id == experiment_id).first()
+            return ExperimentDataSetDetails(
+                labels=details.labels,
+                duration=details.duration,
+                argumentation_types=details.argumentation_types,
+                af_type=details.af_type,
+            )
+
