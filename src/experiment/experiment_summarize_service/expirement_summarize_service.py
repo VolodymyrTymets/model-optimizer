@@ -61,6 +61,7 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self.logger.log("Experiment summarized started", color="green")
         train_ds, val_ds, test_ds = data_sets
         best_step = self._experiment_step_model_service.get_best_step(self._experiment_model.id)
+        best_schema = self._experiment_step.get_schema(step=best_step)
 
         model, history = self._experiment_step.prepare_step_model(step_id=best_step.id, data_sets=data_sets, epochs=self._details.epochs)
         record_acc, validation_acc, record_acc_dic = self.mode_validator.validate(model=model, data=test_ds,

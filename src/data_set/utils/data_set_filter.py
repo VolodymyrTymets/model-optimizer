@@ -69,6 +69,9 @@ class InMemoryModelLoader:
 
     def is_filtered(self, db_path: str):
         best_step = self._get_best_step()
+        if best_step is None:
+            self.logger.log('No best step found', color='red')
+            return False
         path = self.files.join(db_path, '__filtered__')
         if self.files.is_exist(path):
             if not self.files.is_exist(self.files.join(path,"accuracy.txt")):
