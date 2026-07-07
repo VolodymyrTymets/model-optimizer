@@ -33,7 +33,6 @@ class ModeBuilder(IModeBuilder):
             ]
         if layer.type.value == LayerType.GRU.value:
             layers = [
-                # tf.keras.layers.Reshape((64, 43, -1)),
                 tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True)]
             return layers
         else:

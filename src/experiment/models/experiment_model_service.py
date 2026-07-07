@@ -7,6 +7,7 @@ from src.database.db_client import DBClient
 from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails, \
     ExperimentDataSetDetails
 from src.model_schema.model_schema_types import LayerType, ActivationType, OptimizerType, RegularizerType, LossType
+from src.utils.audio_features.types import AFTypes
 from src.utils.logger.logger_interface import ILogger
 
 
@@ -112,6 +113,6 @@ class ExperimentModelService:
                 labels=details.labels,
                 duration=details.duration,
                 argumentation_types=details.argumentation_types,
-                af_type=details.af_type,
+                af_type=AFTypes[details.af_type],
             )
 

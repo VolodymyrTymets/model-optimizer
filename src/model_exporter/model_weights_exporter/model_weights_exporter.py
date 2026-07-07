@@ -25,5 +25,8 @@ class ModelWeightsExporter(IModelWeightsExporter):
     def import_weights(self, model, step: int) -> tf.keras.Model:
         if EMULATE_MODE:
             return model
+        self.loger.log(f'Importing weights from {self._get_weights_path(step)}', color='blue')
+        if not self.files.is_exist(self._get_weights_path(step)):
+            return model
         model.load_weights(self._get_weights_path(step))
         return model

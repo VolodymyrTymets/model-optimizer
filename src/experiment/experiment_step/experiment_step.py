@@ -38,6 +38,15 @@ class ExperimentStep(IExperimentStep):
     def get_best_step(self, steps: list[ExperimentStepModel]) -> ExperimentStepModel:
         return max(steps, key=lambda x: x.record_accuracy)
 
+    def prepare_step_model(self, step_id: int, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], epochs: int) -> tuple[tf.keras.Model, tf.keras.callbacks.History]:
+        train_ds, val_ds, test_ds = data_sets
+        best_step = self._experiment_step_model_service.get_step(step_id=step_id)
+        best_schema = self.get_schema(step=best_step)
+        model = self._model_builder.build_model(best_schema, train_ds)
+        model = self._model_weights_service.import_weights(model, best_step.step)
+        model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
+        return model, history
+
     def run(self, schema: IModelSchema, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], epochs: int) -> ExperimentStepModel:
         train_ds, val_ds, test_ds = data_sets
         step = self._experiment_step_model_service.find(self.experiment_id, schema)
@@ -51,10 +60,7 @@ class ExperimentStep(IExperimentStep):
         self._logger.log(f"[{step.step}]Experiment step started", color="blue")
 
         try:
-            model = self._model_builder.build_model(schema, train_ds)
-            self._model_weights_service.export_weights(model, step.step)
-
-            model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
+            model, history = self.prepare_step_model(step_id=step.id, data_sets=data_sets, epochs=epochs)
         except Exception as e:
             self._logger.log(f"[{step.step}]Experiment step training failed", color="red")
             self._logger.error(e)

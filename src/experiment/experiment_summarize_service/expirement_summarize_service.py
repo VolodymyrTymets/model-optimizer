@@ -11,10 +11,8 @@ from src.experiment.experiment_summarize_service.expirement_summarize_service_in
 from src.experiment.experiment_step.experiment_step import ExperimentStep
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
-from src.model_builder.mode_builder import ModeBuilder
 from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
 from src.model_schema.model_schema_types import IModelSchema
-from src.model_trainer.mode_trainer import ModeTrainer
 from src.model_validator.model_record_label.model_record_label import ModelRecordLabeler
 from src.model_validator.model_record_evaluator.model_record_evaluator import ModelRecordEvaluator
 from src.model_validator.mode_validator import ModeValidator
@@ -30,10 +28,7 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self.logger = Logger('ExperimentSummarizeService')
         self.assets_service = assets_service
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
-
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
-        self.mode_builder = ModeBuilder(logger=Logger('ModeBuilder'))
-        self.mode_trainer = ModeTrainer(logger=Logger('ModeTrainer'))
         self.mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
         self.model_record_evaluator = ModelRecordEvaluator(ModelResultParser(af_strategy=af_strategy))
 
@@ -66,10 +61,8 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self.logger.log("Experiment summarized started", color="green")
         train_ds, val_ds, test_ds = data_sets
         best_step = self._experiment_step_model_service.get_best_step(self._experiment_model.id)
-        best_schema = self._experiment_step.get_schema(step=best_step)
-        model = self.mode_builder.build_model(best_schema, train_ds)
-        model = self.model_weights_service.import_weights(model, best_step.step)
-        model, history = self.mode_trainer.train(model, train_ds, val_ds, self._details.epochs)
+
+        model, history = self._experiment_step.prepare_step_model(step_id=best_step.id, data_sets=data_sets, epochs=self._details.epochs)
         record_acc, validation_acc, record_acc_dic = self.mode_validator.validate(model=model, data=test_ds,
                                                                                   validation_records_path=self.assets_service.get_validation_records_path())
         if EMULATE_MODE is False:

@@ -6,9 +6,7 @@ from src.utils.files import Files
 from src.experiment.experiment_step.experiment_step import ExperimentStep
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
-from src.model_builder.mode_builder import ModeBuilder
 from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
-from src.model_trainer.mode_trainer import ModeTrainer
 
 from src.data_set.utils.data_set_splitter import DataSetFileWorker
 from src.model_validator.model_result_parser.model_result_parser import ModelResultParser
@@ -58,8 +56,7 @@ class InMemoryModelLoader:
     def __init__(self, experiment_id: int, af_strategy: IAFStrategy, assets_service: IAssetsService, ):
         self.experiment_id = experiment_id
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
-        self.mode_builder = ModeBuilder(logger=Logger('ModeBuilder'))
-        self.mode_trainer = ModeTrainer(logger=Logger('ModeTrainer'))
+        self._model_step = ExperimentStepModelService(Logger('ExperimentStepModelService'))
 
         self._experiment_step = ExperimentStep(experiment_id, af_strategy)
         self.model_weights_service = ModelWeightsExporter(assets_service)
@@ -97,11 +94,7 @@ class InMemoryModelLoader:
         if best_step is None:
             return None, None
         self.logger.log(f'Loading model from step {best_step.step} with ac {best_step.accuracy_delta}', color='blue')
-        best_schema = self._experiment_step.get_schema(step=best_step)
-        model = self.mode_builder.build_model(best_schema, train_ds)
-        model = self.model_weights_service.import_weights(model, best_step.step)
-        self.logger.log(f'Starting training...', color='blue')
-        model, history = self.mode_trainer.train(model, train_ds, val_ds, 100)
+        model, _ = self._experiment_step.prepare_step_model(step_id=best_step.id, data_sets=(train_ds, val_ds, test_ds), epochs=100)
         return model, None
 
 
