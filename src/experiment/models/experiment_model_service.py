@@ -77,6 +77,11 @@ class ExperimentModelService:
             session.commit()
             return True
 
+    def get_unfinished_steps(self, experiment_id: int):
+        with self.db_client.session_scope() as session:
+            return session.query(DBExperimentStepModel).filter(
+                DBExperimentStepModel.experiment_id == experiment_id, DBExperimentStepModel.endAt == None).all()
+
     def get_current_experiment(self, experiment_details: IExperimentDetails,
                                data_set_details: IExperimentDataSetDetails):
         with self.db_client.session_scope() as session:

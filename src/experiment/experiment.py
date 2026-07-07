@@ -21,9 +21,19 @@ class Experiment(IExperiment):
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
 
         self._experiment_model = self._experiment_model_service.get_current_experiment(details, data_set_details)
-        self.model_tuner = ModeTuner(details, ExperimentStep(self._experiment_model.id, af_strategy))
+        self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)
+        self.model_tuner = ModeTuner(details, experiment_step=self._experiment_step)
         self.experiment_summary_service = ExperimentSummarizeService(self._experiment_model, af_strategy, AssetsService(
             experiment_id=self._experiment_model.id))
+
+    def _finish_unfinished_steps(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]):
+        unfinished_steps = self._experiment_model_service.get_unfinished_steps(self._experiment_model.id)
+        experiment_details = self._experiment_model_service.get_details(self._experiment_model.id)
+        for unfinished_step in unfinished_steps:
+            unfinished_step_schema = self._experiment_step.get_schema(unfinished_step)
+            self._logger.log(f"Run unfinished step {unfinished_step.step}...", color="blue")
+            self._experiment_step.run(unfinished_step_schema, data_sets, experiment_details.epochs)
+        self._logger.log("Unfinished steps finished", color="green")
 
     def get_experiment_id(self) -> int:
         return self._experiment_model.id
@@ -42,8 +52,12 @@ class Experiment(IExperiment):
         schema = self.model_tuner.rare_tuning(data_sets)
         schema = self.model_tuner.layers_tuning(data_sets, schema)
 
-        # todo: return schema with best settings
-        return self.model_tuner.final_tuning(data_sets, schema)
+        final_schema = self.model_tuner.final_tuning(data_sets, schema)
+
+        # run unfinished steps if any
+        self._finish_unfinished_steps(data_sets)
+
+        return final_schema
 
     def finish(self):
         self._experiment_model_service.finish_experiment(self._experiment_model.id)
