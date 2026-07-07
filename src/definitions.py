@@ -2,11 +2,11 @@
 DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer"
 
 ASSETS_PATH = 'assets'
-
+VERBOSE = True
 EMULATE_MODE = False
 VALIDATION_RECORDS_COUNT = 20
 sr = 44000
-DURATION = 0.5
+DURATION = 0.2
 FRAGMENT_LENGTH = int(sr / (1 / DURATION))
 frame_length = 512
 hop_length = frame_length // 4

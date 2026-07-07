@@ -15,3 +15,7 @@ class IExperiment(ABC):
     @abstractmethod
     def finish(self):
         pass
+
+    @abstractmethod
+    def is_finished(self) -> bool:
+        pass

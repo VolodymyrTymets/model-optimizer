@@ -1,8 +1,9 @@
+import tensorflow as tf
+from keras import Model
 import time
 from typing import Any, Union
 
-import tensorflow as tf
-from keras import Model
+
 from src.definitions import EMULATE_MODE
 from src.utils.logger.logger_interface import ILogger
 from src.model_trainer.mode_trainer_interface import IModeTrainer

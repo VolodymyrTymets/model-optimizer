@@ -1,10 +1,11 @@
 import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel, \
-    ExperimentDataSetDetailsModel
+    ExperimentDataSetDetailsModel, ExperimentStepModel as DBExperimentStepModel
 from src.database.db_client import DBClient
-from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails
+from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails, \
+    ExperimentDataSetDetails
 from src.model_schema.model_schema_types import LayerType, ActivationType, OptimizerType, RegularizerType, LossType
 from src.utils.logger.logger_interface import ILogger
 
@@ -31,7 +32,8 @@ class ExperimentModelService:
         ).all()
         experiment_data_set_details_ids = [x.id for x in _experiment_data_set_details]
         uniq = set(experiment_details_ids).intersection(set(experiment_data_set_details_ids))
-        experiment_id = uniq.pop() if len(uniq) > 0 else None
+        experiment_id = next(iter(uniq)) if len(uniq) > 0 else None
+
         if experiment_id is not None:
             return session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).first()
         return None
@@ -66,23 +68,32 @@ class ExperimentModelService:
     def finish_experiment(self, experiment_id: int):
         self._logger.log("Finishing experiment...", color="green")
         with self.db_client.session_scope() as session:
+            not_finished_steps = session.query(DBExperimentStepModel).filter(DBExperimentStepModel.experiment_id == experiment_id, DBExperimentStepModel.endAt == None).count()
+            if not_finished_steps > 0:
+                self._logger.log("Experiment has not finished steps", color="yellow")
+                return False
             session.query(DBExperimentModel).filter(DBExperimentModel.id == experiment_id).update(
                 {DBExperimentModel.endAt: datetime.datetime.now()})
             session.commit()
             return True
 
+    def get_unfinished_steps(self, experiment_id: int):
+        with self.db_client.session_scope() as session:
+            return session.query(DBExperimentStepModel).filter(
+                DBExperimentStepModel.experiment_id == experiment_id, DBExperimentStepModel.endAt == None).all()
+
     def get_current_experiment(self, experiment_details: IExperimentDetails,
                                data_set_details: IExperimentDataSetDetails):
         with self.db_client.session_scope() as session:
             latest = self._get_current_experiment(session, experiment_details, data_set_details)
-            if latest is not None and latest.endAt is None:
+            if latest is not None:
                 self._logger.log("Found not finished experiment", color="yellow")
                 return latest
             return self._create(experiment_details, data_set_details)
 
-    def get_details(self, experiment: DBExperimentModel) -> IExperimentDetails:
+    def get_details(self, experiment_id: int) -> IExperimentDetails:
         with self.db_client.session_scope() as session:
-            details = session.query(ExperimentDetailsModel).filter(DBExperimentModel.id == experiment.id).first()
+            details = session.query(ExperimentDetailsModel).filter(DBExperimentModel.id == experiment_id).first()
             return ExperimentDetails(
                 epochs=details.epochs,
                 batch_size=details.batch_size,
@@ -93,3 +104,14 @@ class ExperimentModelService:
                 regularizer=[RegularizerType(x) for x in details.regularizer.split(',')],
                 loss=[LossType(x) for x in details.loss.split(',')],
             )
+
+    def get_data_set_details(self, experiment_id: int) -> IExperimentDataSetDetails:
+        with self.db_client.session_scope() as session:
+            details = session.query(ExperimentDataSetDetailsModel).filter(ExperimentDataSetDetailsModel.experiment_id == experiment_id).first()
+            return ExperimentDataSetDetails(
+                labels=details.labels,
+                duration=details.duration,
+                argumentation_types=details.argumentation_types,
+                af_type=details.af_type,
+            )
+

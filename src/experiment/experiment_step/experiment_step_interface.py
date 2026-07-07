@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
-
 import tensorflow as tf
+
+from abc import ABC, abstractmethod
 
 from src.database.schema import ExperimentStepModel, ModelSchemaModel
 from src.model_schema.model_schema_types import IModelSchema

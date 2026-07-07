@@ -1,6 +1,6 @@
+import tensorflow as tf
 from typing import Any, Generator
 
-import tensorflow as tf
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D

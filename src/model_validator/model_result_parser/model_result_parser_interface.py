@@ -1,5 +1,6 @@
-from abc import ABC, abstractmethod
 import tensorflow as tf
+from abc import ABC, abstractmethod
+
 import numpy as np
 
 from src.utils.audio_features.types import AFTypes

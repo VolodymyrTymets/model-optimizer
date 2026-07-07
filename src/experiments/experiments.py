@@ -1,3 +1,4 @@
+import tensorflow as tf
 from src.data_set.data_set_cooker import DataSetCooker
 from src.data_set.types import ArgumentationTypes
 from src.definitions import sr, frame_length, hop_length, labels
@@ -16,19 +17,26 @@ class Experiments():
         self.db_client = DBClient()
         self.db_client.create_database()
 
-    def run_experiment(self, experiment_details: IExperimentDetails, data_set_details: IExperimentDataSetDetails,
-                       af_strategy: IAFStrategy):
-        experiment = Experiment(
+    def create_experiment(self, experiment_details: IExperimentDetails, data_set_details: IExperimentDataSetDetails,
+                          af_strategy: IAFStrategy):
+        return Experiment(
             details=experiment_details,
             data_set_details=data_set_details,
             af_strategy=af_strategy
         )
+
+    def prepare_data_set(self, experiment: Experiment, af_strategy: IAFStrategy):
         data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id(), af_strategy=af_strategy)
         data_set_cooker.prepare(duration=DURATION, argumentation_types=[])
 
         data_set_importer = DataSetImporter(experiment_id=experiment.get_experiment_id(), duration=DURATION,
                                             af_strategy=af_strategy)
         train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
+        return train_ds, val_ds, test_ds, label_names
+
+    def train_experiment(self, experiment: Experiment,
+                         data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], label_names: list[str]):
+        train_ds, val_ds, test_ds = data_sets
 
         experiment.start((train_ds, val_ds, test_ds))
         experiment.summarize((train_ds, val_ds, test_ds), labels=label_names)
@@ -36,15 +44,24 @@ class Experiments():
         experiment.finish()
 
     def run(self, af_types: list[AFTypes], argumentation_types: list[ArgumentationTypes],
-            model_setting: IExperimentDetails):
+            model_setting: IExperimentDetails, train: bool = True):
         exp_argumentation_types = []
         for af_type in af_types:
             for argumentation_type in argumentation_types:
                 exp_argumentation_types.append(argumentation_type)
-                af_strategy = AFStrategyFactory(sr=sr, frame_length=frame_length,
-                                                hop_length=hop_length).create_strategy(af_type)
-                self.run_experiment(experiment_details=model_setting, data_set_details=ExperimentDataSetDetails(
+                data_set_details = ExperimentDataSetDetails(
                     duration=DURATION, labels=labels, argumentation_types=exp_argumentation_types,
                     af_type=af_type
-                ), af_strategy=af_strategy)
+                )
+                af_strategy = AFStrategyFactory(sr=sr, frame_length=frame_length,
+                                                hop_length=hop_length).create_strategy(af_type)
+                experiment = self.create_experiment(experiment_details=model_setting, data_set_details=data_set_details,
+                                                    af_strategy=af_strategy)
+                if experiment.is_finished():
+                    continue
+                train_ds, val_ds, test_ds, label_names = self.prepare_data_set(experiment=experiment,
+                                                                               af_strategy=af_strategy)
+                if train:
+                    self.train_experiment(experiment=experiment, data_sets=(train_ds, val_ds, test_ds),
+                                          label_names=label_names)
             exp_argumentation_types = []
