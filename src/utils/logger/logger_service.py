@@ -1,6 +1,7 @@
 from termcolor import colored
 
 from src.utils.logger.logger_interface import ILogger
+from src.definitions import VERBOSE
 
 
 class Logger(ILogger):
@@ -8,6 +9,8 @@ class Logger(ILogger):
     self.module_name = module_name
 
   def log(self, message: str, color: str = None):
+    if not VERBOSE:
+      return
     if color:
       print(colored(f'[{self.module_name}]: {message}', color))
     else:

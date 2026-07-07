@@ -2,7 +2,7 @@
 DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer"
 
 ASSETS_PATH = 'assets'
-
+VERBOSE = True
 EMULATE_MODE = False
 VALIDATION_RECORDS_COUNT = 20
 sr = 44000
