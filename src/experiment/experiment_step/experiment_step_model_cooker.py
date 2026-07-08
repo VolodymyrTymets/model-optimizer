@@ -40,8 +40,12 @@ class ExperimentStepModelCooker:
         best_step = self._experiment_step_model_service.get_step(step_id=step_id)
         best_schema = self.get_schema(step=best_step)
         model = self._model_builder.build_model(best_schema, train_ds)
-        model = self._model_weights_service.import_weights(model, best_step.step)
+        restored_weights = self._model_weights_service.import_weights(model, best_step.id)
+        if restored_weights is not None:
+           model.set_weights(restored_weights)
+        else:
+            self._model_weights_service.export_weights(model, best_step.id)
         model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
-        self._model_weights_service.export_weights(model, best_step.step)
+
         return model, history
 

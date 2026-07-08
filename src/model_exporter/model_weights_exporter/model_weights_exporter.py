@@ -27,11 +27,11 @@ class ModelWeightsExporter(IModelWeightsExporter):
 
     def import_weights(self, model, step: int) -> tf.keras.Model:
         if EMULATE_MODE:
-            return model
+            return None
         weight = self.experiment_step_model_service.get_weights(step)
         if not weight:
-            return model
+            return None
         self.loger.log(f'Importing weights from {weight.id}', color='blue')
         restored_weights = pickle.loads(weight.data)
-        model.set_weights(restored_weights)
-        return model
+
+        return restored_weights
