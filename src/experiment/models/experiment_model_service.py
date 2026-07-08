@@ -1,12 +1,14 @@
 import datetime
 from typing import Optional
 
+from src.data_set.types import ArgumentationTypes
 from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel, \
     ExperimentDataSetDetailsModel, ExperimentStepModel as DBExperimentStepModel
 from src.database.db_client import DBClient
 from src.experiment.experiment_types import IExperimentDetails, ExperimentDetails, IExperimentDataSetDetails, \
     ExperimentDataSetDetails
 from src.model_schema.model_schema_types import LayerType, ActivationType, OptimizerType, RegularizerType, LossType
+from src.utils.audio_features.types import AFTypes
 from src.utils.logger.logger_interface import ILogger
 
 
@@ -111,7 +113,7 @@ class ExperimentModelService:
             return ExperimentDataSetDetails(
                 labels=details.labels,
                 duration=details.duration,
-                argumentation_types=details.argumentation_types,
-                af_type=details.af_type,
+                argumentation_types=[ArgumentationTypes[x] for x in details.argumentation_types.split(',')],
+                af_type=AFTypes[details.af_type],
             )
 

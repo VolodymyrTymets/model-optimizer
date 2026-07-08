@@ -1,4 +1,3 @@
-import os
 from src.data_set.types import ArgumentationTypes
 from src.experiment.experiment_types import ExperimentDetails
 from src.experiments.experiments import Experiments
@@ -8,8 +7,8 @@ from src.utils.audio_features.types import AFTypes
 def main():
     experiments = Experiments()
     experiments.run(
-        af_types=[AFTypes.stft],
-        argumentation_types = [ArgumentationTypes.time_shift, ArgumentationTypes.pitch_shift, ArgumentationTypes.time_stretch, ArgumentationTypes.normalization],
+        af_types=[AFTypes.mfcc],
+        argumentation_types = [ArgumentationTypes.nothing, ArgumentationTypes.time_shift, ArgumentationTypes.pitch_shift, ArgumentationTypes.normalization],
         model_setting=ExperimentDetails(
             epochs=100,
             batch_size=32,

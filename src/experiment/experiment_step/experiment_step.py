@@ -1,8 +1,10 @@
-import tensorflow as tf
-
 from src.assets_service.assets_service import AssetsService
-from src.database.schema import ExperimentStepModel, ModelSchemaModel
+from src.data_set.data_set_cooker import DataSetCooker
+from src.data_set.data_set_importer import DataSetImporter
+from src.database.schema import ExperimentStepModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
+from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
+from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
 from src.model_schema.model_schema_types import IModelSchema, ModelSchema, LayerType, LayerSchema, ActivationType, \
     RegularizerType, OptimizerType, LossType
@@ -11,7 +13,6 @@ from src.model_validator.mode_validator import ModeValidator
 from src.model_builder.mode_builder import ModeBuilder
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
-from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
 
 
 class ExperimentStep(IExperimentStep):
@@ -21,9 +22,13 @@ class ExperimentStep(IExperimentStep):
         self._model_builder = ModeBuilder(logger=Logger('ModeBuilder'))
         self._mode_trainer = ModeTrainer(logger=Logger('ModeTrainer'))
         self._mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
-        self._model_weights_service = ModelWeightsExporter(self.assets_service)
         self._logger = Logger('ExperimentStep')
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
+        self.experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
+        self.experiment_data_set_details = self.experiment_model_service.get_data_set_details(experiment_id)
+        self.data_set_cooker = DataSetCooker(experiment_id=experiment_id, af_strategy=af_strategy)
+        self.data_set_importer = DataSetImporter(experiment_id=experiment_id, af_strategy=af_strategy, duration=self.experiment_data_set_details.duration)
+        self._experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id=experiment_id, af_strategy=af_strategy)
 
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
         shema = self._experiment_step_model_service.get_schema(step.id)
@@ -38,8 +43,9 @@ class ExperimentStep(IExperimentStep):
     def get_best_step(self, steps: list[ExperimentStepModel]) -> ExperimentStepModel:
         return max(steps, key=lambda x: x.record_accuracy)
 
-    def run(self, schema: IModelSchema, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], epochs: int) -> ExperimentStepModel:
-        train_ds, val_ds, test_ds = data_sets
+    def run(self, schema: IModelSchema, epochs: int) -> ExperimentStepModel:
+        self.data_set_cooker.step_prepare(self.experiment_data_set_details.duration, self.experiment_data_set_details.argumentation_types)
+        train_ds, val_ds, test_ds, _ = self.data_set_importer.import_data_set()
         step = self._experiment_step_model_service.find(self.experiment_id, schema)
 
         if step is None:
@@ -51,10 +57,7 @@ class ExperimentStep(IExperimentStep):
         self._logger.log(f"[{step.step}]Experiment step started", color="blue")
 
         try:
-            model = self._model_builder.build_model(schema, train_ds)
-            self._model_weights_service.export_weights(model, step.step)
-
-            model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
+            model, history = self._experiment_step_model_cooker.cook_step_model(step_id=step.id, data_sets=(train_ds, val_ds, test_ds), epochs=epochs)
         except Exception as e:
             self._logger.log(f"[{step.step}]Experiment step training failed", color="red")
             self._logger.error(e)

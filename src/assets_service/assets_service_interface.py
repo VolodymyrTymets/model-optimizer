@@ -21,3 +21,6 @@ class IAssetsService(ABC):
     @abstractmethod
     def get_model_path(self) -> str:
         pass
+
+    def get_models_path(self) -> tuple[str, str]:
+        pass

@@ -1,9 +1,10 @@
 import tensorflow as tf
 import datetime
-from typing import List
-from sqlalchemy.orm import selectinload
+from typing import List, Optional
+from sqlalchemy.orm import selectinload, InstrumentedAttribute
 
-from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel, ImageModel, RecordResultModel
+from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel, ImageModel, RecordResultModel, \
+    WeightsModel
 from src.database.db_client import DBClient
 from src.model_schema.model_schema_types import IModelSchema
 from src.utils.logger.logger_interface import ILogger
@@ -101,12 +102,20 @@ class ExperimentStepModelService:
                 ExperimentStepModel.step.desc()).first()
             return latest.step if latest is not None else 0
 
-    def get_best_step(self, experiment_id: int):
+    def get_best_step(self, experiment_id: Optional[int] = None):
         with self.db_client.session_scope() as session:
-            best = session.query(ExperimentStepModel).where(
+            if experiment_id is None:
+                return session.query(ExperimentStepModel).order_by(
+                    ExperimentStepModel.accuracy_delta.desc()).first()
+            if type(experiment_id) is not int:
+                raise ValueError("Experiment id must be int or None")
+            return session.query(ExperimentStepModel).where(
                 ExperimentStepModel.experiment_id == experiment_id).order_by(
                 ExperimentStepModel.accuracy_delta.desc()).first()
-            return best
+
+    def get_step(self, step_id: int):
+        with self.db_client.session_scope() as session:
+            return session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
 
     def save_schema_plot(self, step_id: int, schema_plot: ImageModel):
         with self.db_client.session_scope() as session:
@@ -139,3 +148,26 @@ class ExperimentStepModelService:
                 session.flush()
             session.commit()
 
+    def get_weights(self, step_id: int) -> Optional[WeightsModel] :
+        with self.db_client.session_scope() as session:
+            step = session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
+            if step is None:
+                return None
+            if step.weights is None:
+                return None
+            return step.weights
+
+    def save_final_weights(self, step_id: int, data: bytes):
+        with self.db_client.session_scope() as session:
+            step = session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
+            if step is None:
+                return
+            if step.weights is not None:
+                step.weights.data = data
+            else:
+                weights = WeightsModel(data=data)
+                session.add(weights)
+                step.weights = weights
+            session.flush()
+            session.add(step)
+            session.commit()

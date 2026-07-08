@@ -40,7 +40,7 @@ class DataSetTransformer(DataSetFileWorker):
     for normalize_index, n_fragment in enumerate(normalize_fragments):
       self.write_signal(n_fragment, sr, path, f'{ArgumentationTypes.normalization.value}_{normalize_index}')
 
-  def argument(self, argumentation_types=list[ArgumentationTypes], except_sets: list['str'] = [],
+  def argument(self, argumentation_types: list[ArgumentationTypes] = [], except_sets: list['str'] = [],
                except_labels: list[str] = []):
 
     normalization_done_for = []
@@ -51,12 +51,14 @@ class DataSetTransformer(DataSetFileWorker):
         if label in except_labels:
           continue
         for argumentation_type in argumentation_types:
+          if argumentation_type == ArgumentationTypes.nothing:
+            continue
           is_done = self._is_argumentation_done(path=self.files.join(self.out_path, set_name, label), argumentation_type=argumentation_type)
           if is_done:
             self.logger.log(f'Argumentation {argumentation_type.value} is done', color='green')
             normalization_done_for.append(argumentation_type)
 
-
+    is_transformed = False
     for signal, sr, set_name, label, path, file in self.read_data_set(log=False):
       # transformations are only for train set
       if set_name in except_sets:
@@ -69,15 +71,20 @@ class DataSetTransformer(DataSetFileWorker):
         if ArgumentationTypes.normalization in normalization_done_for:
           continue
         self._normalize(signal, sr, path)
+        is_transformed = True
       if ArgumentationTypes.pitch_shift in argumentation_types:
         if ArgumentationTypes.pitch_shift in normalization_done_for:
           continue
         self._pitch_shift(signal, sr, path)
+        is_transformed = True
       if ArgumentationTypes.time_shift in argumentation_types:
         if ArgumentationTypes.time_shift in normalization_done_for:
           continue
         self._time_shift(signal, sr, path)
+        is_transformed = True
       if ArgumentationTypes.time_stretch in argumentation_types:
         if ArgumentationTypes.time_stretch in normalization_done_for:
           continue
         self._time_stretch(signal, sr, path)
+        is_transformed = True
+    return is_transformed

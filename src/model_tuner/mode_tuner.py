@@ -1,4 +1,3 @@
-import tensorflow as tf
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
 from src.experiment.experiment_types import IExperimentDetails
 from src.model_schema.model_schema_types import IModelSchema, ModelSchema, LayerSchema
@@ -16,14 +15,14 @@ class ModeTuner(IModeTuner):
         self.layer_tuner = LayerTuner(details, experiment_step)
 
     # first step: 1 layer, low units, sequential optimizer, loses
-    def rare_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> IModelSchema:
-        layers = self.layer_tuner.rare_tuning(data_sets)
+    def rare_tuning(self) -> IModelSchema:
+        layers = self.layer_tuner.rare_tuning()
 
         steps = []
         for optimizer in self._details.optimizer:
             for loss in self._details.loss:
                 schema = ModelSchema(layers=layers, optimizer=optimizer, loss=loss)
-                step = self._experiment_step.run(schema, data_sets, epochs=self._details.epochs)
+                step = self._experiment_step.run(schema, epochs = self._details.epochs)
                 steps.append(step)
 
         best_step = self._experiment_step.get_best_step(steps)
@@ -35,22 +34,22 @@ class ModeTuner(IModeTuner):
         return best_schema
 
     # second step: 2 layers, high units, sequential activations, regularization
-    def layers_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
-                      schema: IModelSchema) -> IModelSchema:
+    def layers_tuning(self, schema: IModelSchema) -> IModelSchema:
         self._logger.log(f"Layers tuning started", color="green")
         steps = []
         # tuning layers indiviually
         schema.layers = []
         for layer in self._details.layers:
             self._logger.log(f"Layer {','.join(x.type.value for x in schema.layers)} tuning started", color="yellow")
-            current_layer, best_step = self.layer_tuner.tuning(data_sets, schema, LayerSchema(layer, 0))
+            current_layer, best_step = self.layer_tuner.tuning(schema, LayerSchema(layer, 0))
             schema.layers.append(current_layer)
             steps.append(best_step)
         # tuning layers together
         schema.layers = []
         for layer in self._details.layers:
             self._logger.log(f"Layer {''.join(x.type.value for x in schema.layers)} tuning started", color="yellow")
-            current_layer, best_step = self.layer_tuner.tuning(data_sets, schema, LayerSchema(layer, 0), append_layers_together=True)
+            current_layer, best_step = self.layer_tuner.tuning(schema, LayerSchema(layer, 0),
+                                                               append_layers_together=True)
             schema.layers.append(current_layer)
             steps.append(best_step)
 
@@ -64,14 +63,13 @@ class ModeTuner(IModeTuner):
         return best_schema
 
     # third step: 3 final check optimizer, loss,
-    def final_tuning(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset],
-                     schema: IModelSchema) -> IModelSchema:
+    def final_tuning(self, schema: IModelSchema) -> IModelSchema:
         steps = []
         for optimizer in self._details.optimizer:
             for loss in self._details.loss:
                 schema.optimizer = optimizer
                 schema.loss = loss
-                step = self._experiment_step.run(schema, data_sets, epochs=self._details.epochs)
+                step = self._experiment_step.run(schema, epochs=self._details.epochs)
                 steps.append(step)
 
         best_step = self._experiment_step.get_best_step(steps)

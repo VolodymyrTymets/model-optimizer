@@ -26,13 +26,13 @@ class Experiment(IExperiment):
         self.experiment_summary_service = ExperimentSummarizeService(self._experiment_model, af_strategy, AssetsService(
             experiment_id=self._experiment_model.id))
 
-    def _finish_unfinished_steps(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]):
+    def _finish_unfinished_steps(self):
         unfinished_steps = self._experiment_model_service.get_unfinished_steps(self._experiment_model.id)
         experiment_details = self._experiment_model_service.get_details(self._experiment_model.id)
         for unfinished_step in unfinished_steps:
             unfinished_step_schema = self._experiment_step.get_schema(unfinished_step)
             self._logger.log(f"Run unfinished step {unfinished_step.step}...", color="blue")
-            self._experiment_step.run(unfinished_step_schema, data_sets, experiment_details.epochs)
+            self._experiment_step.run(unfinished_step_schema, experiment_details.epochs)
         self._logger.log("Unfinished steps finished", color="green")
 
     def get_experiment_id(self) -> int:
@@ -41,7 +41,7 @@ class Experiment(IExperiment):
     def is_finished(self) -> bool:
         return self._experiment_model.endAt is not None
 
-    def start(self, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset]) -> IModelSchema:
+    def start(self) -> IModelSchema:
 
         if self._experiment_model.endAt is not None:
             self._logger.log("Experiment already finished", color="yellow")
@@ -49,13 +49,13 @@ class Experiment(IExperiment):
 
         self._logger.log("Experiment started for", self._experiment_model.id)
 
-        schema = self.model_tuner.rare_tuning(data_sets)
-        schema = self.model_tuner.layers_tuning(data_sets, schema)
+        schema = self.model_tuner.rare_tuning()
+        schema = self.model_tuner.layers_tuning(schema)
 
-        final_schema = self.model_tuner.final_tuning(data_sets, schema)
+        final_schema = self.model_tuner.final_tuning(schema)
 
         # run unfinished steps if any
-        self._finish_unfinished_steps(data_sets)
+        self._finish_unfinished_steps()
 
         return final_schema
 

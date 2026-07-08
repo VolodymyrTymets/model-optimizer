@@ -41,6 +41,7 @@ class DataSetImporter:
 
   def import_data_set(self):
     data_set_path = self._asset_service.get_data_set_path()
+    self.loger.log(f"Importing data set from {data_set_path}", color="green")
     # Form data storage
     train_ds, val_ds = tf.keras.utils.audio_dataset_from_directory(
       directory=self.files.join(data_set_path, 'train'),

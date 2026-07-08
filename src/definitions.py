@@ -1,12 +1,12 @@
 # Default local store for experiment-progress logging.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer"
+DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer-test"
 
 ASSETS_PATH = 'assets'
 VERBOSE = True
 EMULATE_MODE = False
 VALIDATION_RECORDS_COUNT = 20
 sr = 44000
-DURATION = 0.2
+DURATION = 1
 FRAGMENT_LENGTH = int(sr / (1 / DURATION))
 frame_length = 512
 hop_length = frame_length // 4
