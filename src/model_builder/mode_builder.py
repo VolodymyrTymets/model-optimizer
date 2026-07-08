@@ -33,7 +33,7 @@ class ModeBuilder(IModeBuilder):
             ]
         if layer.type.value == LayerType.GRU.value:
             layers = [
-                tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True, unroll=True)]
+                tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True)]
             return layers
         else:
             raise ValueError(f"Unsupported layer type: {layer.type}")
