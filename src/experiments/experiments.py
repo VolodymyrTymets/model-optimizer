@@ -38,7 +38,7 @@ class Experiments():
                          data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], label_names: list[str]):
         train_ds, val_ds, test_ds = data_sets
 
-        experiment.start((train_ds, val_ds, test_ds))
+        experiment.start()
         experiment.summarize((train_ds, val_ds, test_ds), labels=label_names)
         # raise Exception("!!! STOP")
         experiment.finish()

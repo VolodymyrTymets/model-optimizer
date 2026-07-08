@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 from src.assets_service.assets_service import AssetsService
 from src.data_set.data_set_cooker import DataSetCooker
 from src.data_set.data_set_importer import DataSetImporter
@@ -34,7 +32,6 @@ class ExperimentStep(IExperimentStep):
         self.data_set_importer = DataSetImporter(experiment_id=experiment_id, af_strategy=af_strategy, duration=self.experiment_data_set_details.duration)
         self._experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id=experiment_id, af_strategy=af_strategy)
 
-
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
         shema = self._experiment_step_model_service.get_schema(step.id)
         layers = []
@@ -48,10 +45,7 @@ class ExperimentStep(IExperimentStep):
     def get_best_step(self, steps: list[ExperimentStepModel]) -> ExperimentStepModel:
         return max(steps, key=lambda x: x.record_accuracy)
 
-    def prepare_step_model(self, step_id: int, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], epochs: int) -> tuple[tf.keras.Model, tf.keras.callbacks.History]:
-        return self._experiment_step_model_cooker.cook_step_model(step_id, data_sets, epochs)
-
-    def run(self, schema: IModelSchema, data_sets: tuple[tf.data.Dataset, tf.data.Dataset, tf.data.Dataset], epochs: int) -> ExperimentStepModel:
+    def run(self, schema: IModelSchema, epochs: int) -> ExperimentStepModel:
         self.data_set_cooker.step_prepare(self.experiment_data_set_details.duration, self.experiment_data_set_details.argumentation_types)
         train_ds, val_ds, test_ds, _ = self.data_set_importer.import_data_set()
         step = self._experiment_step_model_service.find(self.experiment_id, schema)
@@ -65,7 +59,7 @@ class ExperimentStep(IExperimentStep):
         self._logger.log(f"[{step.step}]Experiment step started", color="blue")
 
         try:
-            model, history = self.prepare_step_model(step_id=step.id, data_sets=(train_ds, val_ds, test_ds), epochs=epochs)
+            model, history = self._experiment_step_model_cooker.cook_step_model(step_id=step.id, data_sets=(train_ds, val_ds, test_ds), epochs=epochs)
         except Exception as e:
             self._logger.log(f"[{step.step}]Experiment step training failed", color="red")
             self._logger.error(e)

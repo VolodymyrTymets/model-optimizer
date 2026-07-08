@@ -6,6 +6,7 @@ from os.path import join
 from src.assets_service.assets_service_interface import IAssetsService
 from src.data_set.data_set_cooker import DataSetCooker
 from src.definitions import EMULATE_MODE
+from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
 from src.experiment.experiment_summarize_service.expirement_summarize_service_interface import \
     IExperimentSummarizeService
 from src.experiment.experiment_step.experiment_step import ExperimentStep
@@ -41,6 +42,8 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)
         self.model_exporter = ModelExporter(af_strategy=af_strategy)
         self.model_weights_service = ModelWeightsExporter(self.assets_service)
+        self._experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id=self._experiment_model.id,
+                                                                       af_strategy=af_strategy)
 
     def _get_image_model(self, path: str) -> ImageModel:
         with open(path, "rb") as image_file:
@@ -63,7 +66,7 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         best_step = self._experiment_step_model_service.get_best_step(self._experiment_model.id)
         best_schema = self._experiment_step.get_schema(step=best_step)
 
-        model, history = self._experiment_step.prepare_step_model(step_id=best_step.id, data_sets=data_sets, epochs=self._details.epochs)
+        model, history = self._experiment_step_model_cooker.cook_step_model(step_id=best_step.id, data_sets=data_sets, epochs=self._details.epochs)
         record_acc, validation_acc, record_acc_dic = self.mode_validator.validate(model=model, data=test_ds,
                                                                                   validation_records_path=self.assets_service.get_validation_records_path())
         if EMULATE_MODE is False:

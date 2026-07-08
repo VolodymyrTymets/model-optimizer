@@ -5,6 +5,7 @@ from src.definitions import DURATION
 from src.assets_service.assets_service import AssetsService
 from src.data_set.data_set_importer import DataSetImporter
 from src.experiment.experiment_step.experiment_step import ExperimentStep
+from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
 from src.model_exporter.model_exporter import ModelExporter
@@ -27,6 +28,7 @@ class ModelRestorer(IModelRestorer):
                                                af_strategy=AFStrategyFactory(sr=sr, frame_length=frame_length,
                                                                              hop_length=hop_length).create_strategy(
                                                    strategy_type=AFTypes.mfcc))
+
         self.files = Files()
 
     def restore_step(self, step_id: Optional[int] = None):
@@ -44,11 +46,12 @@ class ModelRestorer(IModelRestorer):
         model_exporter = ModelExporter(af_strategy=af_strategy)
         asset_service = AssetsService(experiment_id=best_step.experiment_id)
 
-        experiment_step = ExperimentStep(experiment_id=best_step.experiment_id, af_strategy=af_strategy)
+        experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id=best_step.experiment_id,
+                                                                       af_strategy=af_strategy)
 
         self.loger.log(f"Restoring model...")
         train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
-        mode, _ = experiment_step.prepare_step_model(step_id=best_step.id, data_sets=(train_ds, val_ds, test_ds),
+        mode, _ = experiment_step_model_cooker.cook_step_model(step_id=best_step.id, data_sets=(train_ds, val_ds, test_ds),
                                                            epochs=details.epochs)
         self.loger.log(f"Model restored", color="green")
         path, mode_name = asset_service.get_models_path()
