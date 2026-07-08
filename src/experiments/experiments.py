@@ -25,9 +25,9 @@ class Experiments():
             af_strategy=af_strategy
         )
 
-    def prepare_data_set(self, experiment: Experiment, af_strategy: IAFStrategy):
+    def prepare_data_set(self, experiment: Experiment, af_strategy: IAFStrategy, argumentation_types: list[ArgumentationTypes]):
         data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id(), af_strategy=af_strategy)
-        data_set_cooker.prepare(duration=DURATION, argumentation_types=[])
+        data_set_cooker.prepare(duration=DURATION, argumentation_types=argumentation_types)
 
         data_set_importer = DataSetImporter(experiment_id=experiment.get_experiment_id(), duration=DURATION,
                                             af_strategy=af_strategy)
@@ -60,7 +60,8 @@ class Experiments():
                 if experiment.is_finished():
                     continue
                 train_ds, val_ds, test_ds, label_names = self.prepare_data_set(experiment=experiment,
-                                                                               af_strategy=af_strategy)
+                                                                               af_strategy=af_strategy,
+                                                                               argumentation_types=exp_argumentation_types)
                 if train:
                     self.train_experiment(experiment=experiment, data_sets=(train_ds, val_ds, test_ds),
                                           label_names=label_names)

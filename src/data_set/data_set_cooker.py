@@ -1,5 +1,5 @@
-from os.path import join, exists
 import shutil
+from os.path import join, exists
 
 from src.assets_service.assets_service import AssetsService
 from src.data_set.utils.data_set_filter import DataSetFilter
@@ -32,7 +32,12 @@ class DataSetCooker:
                                              assets_service=self._asset_service, experiment_id=experiment_id)
 
         self.logger = Logger('DataSet')
+        self._datasets_path = datasets_path
 
+    def remove_data_set(self):
+        if exists(self._datasets_path):
+            shutil.rmtree(self._datasets_path)
+            self.logger.log(f'Previous Data set removed', color='green')
 
     def _split_data_set(self, duration: float = 0.5):
         if exists(self._asset_service.get_data_set_path()):
@@ -41,14 +46,17 @@ class DataSetCooker:
         self.logger.log(f'Splitting data set into train and test sets with duration: {duration}', color='blue')
         self.data_set_splitter.split(duration)
 
-    def _argument_data_set(self, argumentation_types=list[ArgumentationTypes]):
+    def _argument_data_set(self, argumentation_types: list[ArgumentationTypes]):
         if EMULATE_MODE:
-            return
+            return False
+        if self.data_set_filter.is_filtered() is False:
+            self.logger.log(f'Data set is not filtered. Skipping argumentation', color='red')
+            return False
         self.logger.log(
             f'Transforming data set with argumentation types: {",".join([x.value for x in argumentation_types])}',
             color='blue')
-        self.data_set_transformer.argument(argumentation_types=argumentation_types, except_sets=['test'],
-                                           except_labels=[])
+        return self.data_set_transformer.argument(argumentation_types=argumentation_types, except_sets=['test'],
+                                           except_labels=['noise'])
 
     def _generate_records(self, duration: float = 0.5, record_count: int = 10):
         if EMULATE_MODE:
@@ -63,10 +71,20 @@ class DataSetCooker:
 
     def _filter_data_set(self, duration: float = 0.5):
         if EMULATE_MODE:
-            return
-        self.data_set_filter.filter(duration=duration)
+            return False
+        return self.data_set_filter.filter(duration=duration)
 
-    def prepare(self, duration: float = 0.5, argumentation_types=list[ArgumentationTypes]):
+    def step_prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
+        is_filtered = self._filter_data_set(duration)
+        print(f'is_filtered: {is_filtered}')
+        if is_filtered is False:
+            return False
+        is_argumeted = self._argument_data_set(argumentation_types=argumentation_types)
+        print(f'is_argumeted: {is_argumeted}')
+        return is_filtered or is_argumeted
+
+    def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
+        self.remove_data_set()
         self._split_data_set(duration)
         self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)

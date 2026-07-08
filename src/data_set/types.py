@@ -6,3 +6,4 @@ class ArgumentationTypes(Enum):
   time_stretch = 'time_stretch'
   pitch_shift = 'pitch_shift'
   time_shift = 'time_shift'
+  nothing = 'nothing'

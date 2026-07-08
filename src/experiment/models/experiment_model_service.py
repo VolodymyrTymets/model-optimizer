@@ -1,6 +1,7 @@
 import datetime
 from typing import Optional
 
+from src.data_set.types import ArgumentationTypes
 from src.database.schema import ExperimentModel as DBExperimentModel, ExperimentDetailsModel, \
     ExperimentDataSetDetailsModel, ExperimentStepModel as DBExperimentStepModel
 from src.database.db_client import DBClient
@@ -112,7 +113,7 @@ class ExperimentModelService:
             return ExperimentDataSetDetails(
                 labels=details.labels,
                 duration=details.duration,
-                argumentation_types=details.argumentation_types,
+                argumentation_types=[ArgumentationTypes[x] for x in details.argumentation_types.split(',')],
                 af_type=AFTypes[details.af_type],
             )
 
