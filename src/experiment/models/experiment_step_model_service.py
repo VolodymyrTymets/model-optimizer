@@ -1,9 +1,10 @@
 import tensorflow as tf
 import datetime
 from typing import List, Optional
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, InstrumentedAttribute
 
-from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel, ImageModel, RecordResultModel
+from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel, ImageModel, RecordResultModel, \
+    WeightsModel
 from src.database.db_client import DBClient
 from src.model_schema.model_schema_types import IModelSchema
 from src.utils.logger.logger_interface import ILogger
@@ -145,4 +146,28 @@ class ExperimentStepModelService:
                 session.flush()
                 session.add(result)
                 session.flush()
+            session.commit()
+
+    def get_weights(self, step_id: int) -> Optional[WeightsModel] :
+        with self.db_client.session_scope() as session:
+            step = session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
+            if step is None:
+                return None
+            if step.weights is None:
+                return None
+            return step.weights
+
+    def save_final_weights(self, step_id: int, data: bytes):
+        with self.db_client.session_scope() as session:
+            step = session.query(ExperimentStepModel).filter(ExperimentStepModel.id == step_id).first()
+            if step is None:
+                return
+            if step.weights is not None:
+                step.weights.data = data
+            else:
+                weights = WeightsModel(data=data)
+                session.add(weights)
+                step.weights = weights
+            session.flush()
+            session.add(step)
             session.commit()

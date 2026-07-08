@@ -13,7 +13,6 @@ from src.model_validator.mode_validator import ModeValidator
 from src.model_builder.mode_builder import ModeBuilder
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
-from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
 
 
 class ExperimentStep(IExperimentStep):
@@ -23,7 +22,6 @@ class ExperimentStep(IExperimentStep):
         self._model_builder = ModeBuilder(logger=Logger('ModeBuilder'))
         self._mode_trainer = ModeTrainer(logger=Logger('ModeTrainer'))
         self._mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
-        self._model_weights_service = ModelWeightsExporter(self.assets_service)
         self._logger = Logger('ExperimentStep')
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
         self.experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))

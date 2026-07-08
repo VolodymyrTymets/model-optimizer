@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import LargeBinary
 
 
 class Base(DeclarativeBase):
@@ -73,11 +74,13 @@ class ExperimentStepModel(Base):
     accuracy_delta: Mapped[float] = mapped_column(sa.Float, default=0)
     epochs: Mapped[int] = mapped_column(sa.Integer, default=0)
     training_history_plot_id: Mapped[Optional[int]] = mapped_column(ForeignKey("image.id"), nullable=True)
+    weights_id: Mapped[Optional[int]] = mapped_column(ForeignKey("weights.id"), nullable=True)
 
     schema: Mapped["ModelSchemaModel"] = relationship(back_populates="step")
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="steps")
     training_history_plot: Mapped[Optional["ImageModel"]] = relationship(back_populates="training_history_plots")
     record_results: Mapped[Optional[List["RecordResultModel"]]] = relationship(back_populates="experiment_step")
+    weights: Mapped[Optional["WeightsModel"]] = relationship(back_populates="experiment_steps")
 
 
 class ModelSchemaModel(Base):
@@ -111,6 +114,14 @@ class ModelLayerModel(Base):
     experiment: Mapped["ExperimentModel"] = relationship(back_populates="model_layers")
     model_schema: Mapped["ModelSchemaModel"] = relationship(back_populates="model_layers")
 
+
+class WeightsModel(Base):
+    __tablename__ = "weights"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # Maps directly to Python 'bytes' and DB binary types
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+    experiment_steps: Mapped[List["ExperimentStepModel"]] = relationship(back_populates="weights")
 
 class ImageModel(Base):
     __tablename__ = "image"

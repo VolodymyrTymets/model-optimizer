@@ -23,6 +23,7 @@ class ExperimentStepModelCooker:
         self._model_weights_service = ModelWeightsExporter(self.assets_service)
         self._logger = Logger('ExperimentStep')
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
+        self._model_weights_service = ModelWeightsExporter(self.assets_service)
 
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
         shema = self._experiment_step_model_service.get_schema(step.id)
@@ -41,5 +42,6 @@ class ExperimentStepModelCooker:
         model = self._model_builder.build_model(best_schema, train_ds)
         model = self._model_weights_service.import_weights(model, best_step.step)
         model, history = self._mode_trainer.train(model, train_ds, val_ds, epochs)
+        self._model_weights_service.export_weights(model, best_step.step)
         return model, history
 
