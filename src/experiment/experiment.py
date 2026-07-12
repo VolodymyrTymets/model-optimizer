@@ -49,10 +49,16 @@ class Experiment(IExperiment):
 
         self._logger.log("Experiment started for", self._experiment_model.id)
 
-        schema = self.model_tuner.rare_tuning()
-        schema = self.model_tuner.layers_tuning(schema)
+        try:
+            schema = self.model_tuner.rare_tuning()
+            schema = self.model_tuner.layers_tuning(schema)
 
-        final_schema = self.model_tuner.final_tuning(schema)
+            final_schema = self.model_tuner.final_tuning(schema)
+        except Exception as e:
+            if "__ACCURACY_DELTA_EXCEEDED__" in str(e):
+                self._logger.log(f'Experiment reach accuracy 100%. Further steps aren\'t necessary', color="green")
+            else:
+                raise e
 
         # run unfinished steps if any
         self._finish_unfinished_steps()

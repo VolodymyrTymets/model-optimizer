@@ -7,7 +7,7 @@ from src.utils.audio_features.types import AFTypes
 def main():
     experiments = Experiments()
     experiments.run(
-        af_types=[AFTypes.mfcc],
+        af_types=[AFTypes.mfcc, AFTypes.mel],
         argumentation_types = [ArgumentationTypes.nothing, ArgumentationTypes.time_shift, ArgumentationTypes.pitch_shift, ArgumentationTypes.normalization],
         model_setting=ExperimentDetails(
             epochs=100,

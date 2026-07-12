@@ -1,12 +1,12 @@
 # Default local store for experiment-progress logging.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer-test"
+DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer"
 
 ASSETS_PATH = 'assets'
 VERBOSE = True
 EMULATE_MODE = False
-VALIDATION_RECORDS_COUNT = 20
-sr = 44000
-DURATION = 1
+VALIDATION_RECORDS_COUNT = 10
+sr = 44100
+DURATION = 0.5
 FRAGMENT_LENGTH = int(sr / (1 / DURATION))
 frame_length = 512
 hop_length = frame_length // 4
@@ -19,4 +19,5 @@ labels_colors = {
     'breath': 'green'
 }
 sub_sets = ['train', 'test']
+keet_prefix = 'keep'
 

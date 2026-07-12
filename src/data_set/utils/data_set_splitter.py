@@ -1,7 +1,7 @@
 from src.data_set.utils.data_set_file_worker import DataSetFileWorker
 from src.utils.audio_features.signal_transformer import SignalTransformer
 
-from src.definitions import sr as SR, frame_length, hop_length
+from src.definitions import sr as SR, frame_length, hop_length, keet_prefix
 
 
 class DataSetSplitter(DataSetFileWorker):
@@ -15,4 +15,5 @@ class DataSetSplitter(DataSetFileWorker):
             signal, sr, set_name, label, path, file = data
             fragments = self.transformer.split(signal=signal, duration=duration)
             for time_index, fragment in enumerate(fragments):
-                self.write_signal(fragment, sr, path, str(i + time_index))
+                prefix = str(i + time_index) + f'_{keet_prefix}' if keet_prefix in file else ''
+                self.write_signal(fragment, sr, path, prefix=prefix)

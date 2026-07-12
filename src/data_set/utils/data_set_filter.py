@@ -13,7 +13,7 @@ from src.model_validator.model_result_parser.model_result_parser import ModelRes
 from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFactory
 from src.utils.logger.logger_service import Logger
 from src.assets_service.assets_service_interface import IAssetsService
-from src.definitions import FRAGMENT_LENGTH, sr, frame_length, hop_length
+from src.definitions import FRAGMENT_LENGTH, sr, frame_length, hop_length, keet_prefix
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 
 
@@ -143,6 +143,8 @@ class DataSetFilter(DataSetFileWorker):
             if set_name in self.except_sets:
                 continue
             if label in self.except_labels:
+                continue
+            if keet_prefix in file:
                 continue
             if len(signal) >= FRAGMENT_LENGTH:
                 signal_label, _ = self.model_parser.parse(model=model, x=signal)

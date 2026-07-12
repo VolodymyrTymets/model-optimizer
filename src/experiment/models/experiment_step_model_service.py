@@ -67,17 +67,21 @@ class ExperimentStepModelService:
         current = self.find(experiment_id, model_schema)
         if current is None:
             raise ValueError("Experiment step not found")
+        accuracy_delta = (record_accuracy + validation_accuracy) / 2
         with self.db_client.session_scope() as session:
             session.query(ExperimentStepModel).filter(ExperimentStepModel.id == current.id).update(
                 {
                     ExperimentStepModel.endAt: datetime.datetime.now(),
                     ExperimentStepModel.record_accuracy: record_accuracy,
                     ExperimentStepModel.validation_accuracy: validation_accuracy,
-                    ExperimentStepModel.accuracy_delta: (record_accuracy + validation_accuracy) / 2,
+                    ExperimentStepModel.accuracy_delta: accuracy_delta,
                     ExperimentStepModel.epochs: len(history.history['loss']),
                 })
             session.commit()
+            if accuracy_delta >= 100:
+                raise ValueError("__ACCURACY_DELTA_EXCEEDED__")
             return True
+
 
     def find(self, experiment_id: int, model_schema: IModelSchema):
         fingerprint = self._create_fingerprint(model_schema)
