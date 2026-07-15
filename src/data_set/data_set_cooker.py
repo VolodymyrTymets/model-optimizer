@@ -58,10 +58,12 @@ class DataSetCooker:
         return self.data_set_transformer.argument(argumentation_types=argumentation_types, except_sets=['test'],
                                            except_labels=['noise'])
 
-    def _generate_records(self, duration: float = 0.5, record_count: int = 10):
+    def _generate_records(self, duration: float = 0.5, record_count: int = 10, is_need_to_regenerate: bool = False):
         if EMULATE_MODE:
             return
         self.logger.log(f'Generating records for train and test sets', color='blue')
+        if is_need_to_regenerate:
+            shutil.rmtree(self._asset_service.get_validation_records_path())
         if exists(self._asset_service.get_validation_records_path()):
             self.logger.log(f'Validation records already generated', color='green')
             return
@@ -86,6 +88,6 @@ class DataSetCooker:
     def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
         self.remove_data_set()
         self._split_data_set(duration)
-        self._filter_data_set(duration)
+        is_filtered = self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
-        self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT)
+        self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT, is_need_to_regenerate=is_filtered)

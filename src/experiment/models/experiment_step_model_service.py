@@ -143,6 +143,11 @@ class ExperimentStepModelService:
             session.add(step)
             session.commit()
 
+    def remove_record_results(self, step_id: int):
+        with self.db_client.session_scope() as session:
+            session.query(RecordResultModel).filter(RecordResultModel.experiment_step_id == step_id).delete()
+            session.commit()
+
     def save_record_results(self, results: List[RecordResultModel]):
         with self.db_client.session_scope() as session:
             for result in results:

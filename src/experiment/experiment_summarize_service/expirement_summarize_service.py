@@ -89,6 +89,7 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
                                                                           path=self.assets_service.get_model_path())
 
             # save results to database
+            self._experiment_step_model_service.remove_record_results(step_id=best_step.id)
             self._experiment_step_model_service.save_record_results(results=record_results)
             self._experiment_step_model_service.save_schema_plot(step_id=best_step.id,
                                                                  schema_plot=self._get_image_model(path=mode_plot_path))

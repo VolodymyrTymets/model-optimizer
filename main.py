@@ -14,7 +14,7 @@ def main():
             batch_size=32,
             layers=[LayerType.Conv, LayerType.GRU, LayerType.Dense, ],
             activation=[ActivationType.ReLU, ActivationType.Sigmoid],
-            units_range=[8, 256],
+            units_range=[8, 1024],
             optimizer=[OptimizerType.Adam, OptimizerType.AdamW],
             regularizer=[RegularizerType.L1, RegularizerType.L2],
             loss=[LossType.SparseCategoricalCrossentropy],

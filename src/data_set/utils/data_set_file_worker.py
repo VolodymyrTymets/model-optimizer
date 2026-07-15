@@ -27,10 +27,14 @@ class DataSetFileWorker:
         self.wave_file.write(file_name, signal, sr)
         return file_name
 
-    def read_data_set(self, log: bool = True):
+    def read_data_set(self, log: bool = True, exclude_labels: list[str] = None, except_sets: list[str] = None):
         ds_path = self.in_path
         for set_name in self.set_names:
+            if except_sets and set_name in except_sets:
+                continue
             for label in self.labels:
+                if exclude_labels and label in exclude_labels:
+                    continue
                 try:
                     path = self.files.join(ds_path, set_name, str(label))
                 except Exception as e:

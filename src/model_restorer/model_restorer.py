@@ -24,7 +24,7 @@ class ModelRestorer(IModelRestorer):
         self.loger = Logger('ModelRestorer')
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
-        self._experiment_step = ExperimentStep(experiment_id=0,
+        self._experiment_step = ExperimentStep(experiment_id=1,
                                                af_strategy=AFStrategyFactory(sr=sr, frame_length=frame_length,
                                                                              hop_length=hop_length).create_strategy(
                                                    strategy_type=AFTypes.mfcc))

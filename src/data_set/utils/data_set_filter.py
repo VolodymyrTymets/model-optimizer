@@ -1,6 +1,7 @@
 import tensorflow as tf
 import shutil
 from src.data_set.data_set_importer import DataSetImporter
+from src.data_set.types import ArgumentationTypes
 from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
 from src.utils.files import Files
 
@@ -51,7 +52,6 @@ class LocalModelLoader:
         self.files.create_folder(self.files.join(db_path, '__filtered__'))
 
 
-
 class InMemoryModelLoader:
     def __init__(self, experiment_id: int, af_strategy: IAFStrategy, assets_service: IAssetsService, ):
         self.experiment_id = experiment_id
@@ -74,10 +74,10 @@ class InMemoryModelLoader:
             return False
         path = self.files.join(db_path, '__filtered__')
         if self.files.is_exist(path):
-            if not self.files.is_exist(self.files.join(path,"accuracy.txt")):
+            if not self.files.is_exist(self.files.join(path, "accuracy.txt")):
                 self.logger.log(f'No accuracy file found for {db_path}', color='red')
                 return False
-            with open(self.files.join(path,"accuracy.txt"), "r", encoding="utf-8") as file:
+            with open(self.files.join(path, "accuracy.txt"), "r", encoding="utf-8") as file:
                 content = file.read()
                 return best_step.accuracy_delta <= float(content.strip())
         return False
@@ -86,7 +86,7 @@ class InMemoryModelLoader:
         best_step = self._get_best_step()
         path = self.files.join(db_path, '__filtered__')
         self.files.create_folder(path)
-        with open(self.files.join(path,"accuracy.txt"), "w", encoding="utf-8") as file:
+        with open(self.files.join(path, "accuracy.txt"), "w", encoding="utf-8") as file:
             file.write(str(best_step.accuracy_delta) + "\n")
 
     def get_model(self, duration: float):
@@ -97,7 +97,8 @@ class InMemoryModelLoader:
         if best_step is None:
             return None, None
         self.logger.log(f'Loading model from step {best_step.step} with ac {best_step.accuracy_delta}', color='blue')
-        model, _ = self._experiment_step_model_cooker.cook_step_model(step_id=best_step.id, data_sets=(train_ds, val_ds, test_ds), epochs=100)
+        model, _ = self._experiment_step_model_cooker.cook_step_model(step_id=best_step.id,
+                                                                      data_sets=(train_ds, val_ds, test_ds), epochs=100)
         return model, None
 
 
@@ -139,12 +140,10 @@ class DataSetFilter(DataSetFileWorker):
         if filter_af_strategy is not None:
             self.model_parser = ModelResultParser(af_strategy=filter_af_strategy)
         is_filtered = False
-        for signal, sr, set_name, label, path, file in self.read_data_set(log=False):
-            if set_name in self.except_sets:
-                continue
-            if label in self.except_labels:
-                continue
+        for signal, sr, set_name, label, path, file in self.read_data_set(log=False, exclude_labels=self.except_labels, except_sets=self.except_sets):
             if keet_prefix in file:
+                continue
+            if ArgumentationTypes.pitch_shift.value in file or ArgumentationTypes.time_shift.value in file or ArgumentationTypes.time_stretch.value in file or ArgumentationTypes.normalization.value in file:
                 continue
             if len(signal) >= FRAGMENT_LENGTH:
                 signal_label, _ = self.model_parser.parse(model=model, x=signal)
