@@ -32,6 +32,7 @@ class ModelExporter:
         return tf.saved_model.load(export_dir=path)
 
     def export_model_plot(self, model, path: str):
+        self.files.create_folder(self._get_export_path(path))
         to_file = self.files.join(self._get_export_path(path), 'model_plot.png')
         tf.keras.utils.plot_model(model, to_file=to_file, show_shapes=True, show_layer_names=True,
                                   show_layer_activations=True,
