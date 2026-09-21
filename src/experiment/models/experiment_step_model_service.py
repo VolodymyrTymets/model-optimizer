@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload, InstrumentedAttribute
 from src.database.schema import ExperimentStepModel, ModelSchemaModel, ModelLayerModel, ImageModel, RecordResultModel, \
     WeightsModel
 from src.database.db_client import DBClient
+from src.definitions import DATA_SET_TYPE
 from src.model_schema.model_schema_types import IModelSchema
 from src.utils.logger.logger_interface import ILogger
 
@@ -67,7 +68,8 @@ class ExperimentStepModelService:
         current = self.find(experiment_id, model_schema)
         if current is None:
             raise ValueError("Experiment step not found")
-        accuracy_delta = (record_accuracy + validation_accuracy) / 2
+        # image data sets have no record accuracy
+        accuracy_delta = validation_accuracy if DATA_SET_TYPE == 'image' else (record_accuracy + validation_accuracy) / 2
         with self.db_client.session_scope() as session:
             session.query(ExperimentStepModel).filter(ExperimentStepModel.id == current.id).update(
                 {

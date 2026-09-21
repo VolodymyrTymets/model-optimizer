@@ -7,6 +7,7 @@ from src.utils.files import Files
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_instance.model_instance import ModelInstance
 from src.definitions import DURATION
+from src.utils.audio_features.types import AFTypes
 
 
 class ModelExporter:
@@ -14,13 +15,16 @@ class ModelExporter:
         self.files = Files()
         self.loger = Logger('ModelExporter')
         self.af_strategy = af_strategy
-        self._signature = f'_{DURATION}_{str(self.af_strategy.AFType.value)}'
+        # image data sets have no audio feature strategy
+        self._af_type = AFTypes.none if af_strategy is None else af_strategy.AFType
+        self._duration = 0 if af_strategy is None else DURATION
+        self._signature = f'_{self._duration}_{str(self._af_type.value)}'
 
     def _get_export_path(self, path: str):
         return path + self._signature
 
     def export_model(self, model, labels, path: str):
-        export = ModelInstance(model, labels, self.af_strategy.AFType, str(DURATION))
+        export = ModelInstance(model, labels, self._af_type, str(self._duration))
 
         tf.saved_model.save(export, self._get_export_path(path), signatures={
             'get_settings': export.get_settings,

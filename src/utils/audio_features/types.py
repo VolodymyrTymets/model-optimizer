@@ -13,3 +13,5 @@ class AFTypes(Enum):
   bw = 'bw'
   mel = 'mel'
   mfcc = 'mfcc'
+  # placeholder for image data sets, which have no audio feature
+  none = 'none'

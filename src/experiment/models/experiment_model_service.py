@@ -113,7 +113,7 @@ class ExperimentModelService:
             return ExperimentDataSetDetails(
                 labels=details.labels,
                 duration=details.duration,
-                argumentation_types=[ArgumentationTypes[x] for x in details.argumentation_types.split(',')],
+                argumentation_types=[ArgumentationTypes[x] for x in details.argumentation_types.split(',') if x],
                 af_type=AFTypes[details.af_type],
             )
 

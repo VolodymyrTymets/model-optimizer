@@ -2,6 +2,8 @@ import tensorflow as tf
 import random
 
 from src.definitions import EMULATE_MODE
+from typing import Optional
+
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_interface import ILogger
 from src.model_validator.mode_validator_interfcace import IModeValidator
@@ -10,9 +12,11 @@ from src.model_validator.model_result_parser.model_result_parser import ModelRes
 
 
 class ModeValidator(IModeValidator):
-    def __init__(self, logger: ILogger, af_strategy: IAFStrategy):
+    def __init__(self, logger: ILogger, af_strategy: Optional[IAFStrategy]):
         self._logger = logger
-        self.model_record_evaluator = ModelRecordEvaluator(model_parser=ModelResultParser(af_strategy=af_strategy))
+        # image data sets have no recordings, so there is no record accuracy to evaluate
+        self.model_record_evaluator = None if af_strategy is None else ModelRecordEvaluator(
+            model_parser=ModelResultParser(af_strategy=af_strategy))
 
     def validate(self, model: tf.keras.Model, data: tf.data.Dataset, validation_records_path: str) -> tuple[
         float, float, dict[str, float]]:
@@ -21,5 +25,7 @@ class ModeValidator(IModeValidator):
             return record_acc, validation_acc, {"test": 0}
         loss, accuracy = model.evaluate(data)
         validation_acc = accuracy * 100
+        if self.model_record_evaluator is None:
+            return 0.0, validation_acc, {}
         record_acc, record_acc_dic = self.model_record_evaluator.evaluate_records(model=model, from_path=validation_records_path)
         return record_acc, validation_acc, record_acc_dic

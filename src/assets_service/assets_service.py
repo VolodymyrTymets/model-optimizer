@@ -1,7 +1,7 @@
 from os.path import join
 
 from src.assets_service.assets_service_interface import IAssetsService
-from src.definitions import ASSETS_PATH, DATA_SET_NAME
+from src.definitions import ASSETS_PATH, DATA_SET_NAME, DATA_SET_TYPE
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.utils.logger.logger_service import Logger
 
@@ -34,6 +34,8 @@ class AssetsService(IAssetsService):
         return ASSETS_PATH
 
     def get_data_set_path(self):
+        if DATA_SET_TYPE == 'image':
+            return join(ASSETS_PATH, self.out_data_set_name)
         finger_print = self._get_data_set_fingerprint()
         return join(ASSETS_PATH, f'{self.out_data_set_name}_{finger_print}')
 

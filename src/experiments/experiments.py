@@ -1,12 +1,14 @@
 from src.data_set.data_set_cooker import DataSetCooker
 from src.data_set.types import ArgumentationTypes
-from src.definitions import sr, frame_length, hop_length, labels
+from typing import Optional
+
+from src.definitions import sr, frame_length, hop_length, labels, DATA_SET_TYPE
 from src.experiment.experiment import Experiment
 from src.experiment.experiment_types import IExperimentDetails, IExperimentDataSetDetails, ExperimentDataSetDetails
 from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFactory
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.audio_features.types import AFTypes
-from src.data_set.data_set_importer import DataSetImporter
+from src.data_set.data_set_importer_factory import create_data_set_importer
 from src.database.db_client import DBClient
 from src.definitions import DURATION
 
@@ -29,8 +31,8 @@ class Experiments:
         data_set_cooker = DataSetCooker(experiment_id=experiment.get_experiment_id(), af_strategy=af_strategy)
         data_set_cooker.prepare(duration=DURATION, argumentation_types=argumentation_types)
 
-        data_set_importer = DataSetImporter(experiment_id=experiment.get_experiment_id(), duration=DURATION,
-                                            af_strategy=af_strategy)
+        data_set_importer = create_data_set_importer(experiment_id=experiment.get_experiment_id(),
+                                                     af_strategy=af_strategy, duration=DURATION)
         train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
         return train_ds, val_ds, test_ds, label_names
 
@@ -38,15 +40,29 @@ class Experiments:
 
 
         experiment.start()
-        data_set_importer = DataSetImporter(experiment_id=experiment.get_experiment_id(), duration=DURATION,
-                                            af_strategy=af_strategy)
+        data_set_importer = create_data_set_importer(experiment_id=experiment.get_experiment_id(),
+                                                     af_strategy=af_strategy, duration=DURATION)
         train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
         experiment.summarize(data_sets=(train_ds, val_ds, test_ds), labels=label_names)
         # raise Exception("!!! STOP")
         experiment.finish()
 
-    def run(self, af_types: list[AFTypes], argumentation_types: list[ArgumentationTypes],
-            model_setting: IExperimentDetails, train: bool = True):
+    def run_image(self, model_setting: IExperimentDetails, train: bool = True):
+        # image data set: no audio feature, duration or audio argumentation, so store neutral placeholders
+        data_set_details = ExperimentDataSetDetails(
+            duration=0.0, labels=labels, argumentation_types=[], af_type=AFTypes.none
+        )
+        experiment = self.create_experiment(experiment_details=model_setting, data_set_details=data_set_details,
+                                            af_strategy=None)
+        if experiment.is_finished():
+            return
+        if train:
+            self.train_experiment(experiment=experiment, af_strategy=None)
+
+    def run(self, model_setting: IExperimentDetails, af_types: Optional[list[AFTypes]] = None,
+            argumentation_types: Optional[list[ArgumentationTypes]] = None, train: bool = True):
+        if DATA_SET_TYPE == 'image':
+            return self.run_image(model_setting=model_setting, train=train)
         exp_argumentation_types = []
         for af_type in af_types:
             for argumentation_type in argumentation_types:

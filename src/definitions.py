@@ -3,6 +3,10 @@ DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-opti
 
 ASSETS_PATH = 'assets'
 DATA_SET_NAME = 'brain-tumor-mri-dataset'
+# 'audio' (wav + audio features) or 'image' (jpg, no audio features/record accuracy)
+DATA_SET_TYPE = 'image'
+IMAGE_SIZE = (256, 256)
+IMAGE_COLOR_MODE = 'grayscale'
 VERBOSE = True
 EMULATE_MODE = False
 SKIP_FILTER = True
@@ -14,13 +18,21 @@ frame_length = 512
 hop_length = frame_length // 4
 n_mels = 64
 n_mfcc = 64
-# RLN
-labels = ['noise', 'stimulation', 'breath']
+# Brain tumor MRI (image)
+labels = ['glioma', 'meningioma', 'notumor', 'pituitary']
 labels_colors = {
-    'noise': 'blue',
-    'stimulation': 'red',
-    'breath': 'green'
+    'glioma': 'red',
+    'meningioma': 'green',
+    'notumor': 'blue',
+    'pituitary': 'orange'
 }
+# RLN
+# labels = ['noise', 'stimulation', 'breath']
+# labels_colors = {
+#     'noise': 'blue',
+#     'stimulation': 'red',
+#     'breath': 'green'
+# }
 #EMG
 # labels = ['noise', 'WristExtension', 'WristFlexion'] #'Supination', 'Rest', 'Pronation', 'HandOpen', 'HandClose']
 # labels_colors = {

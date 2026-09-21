@@ -25,12 +25,16 @@ class ModeBuilder(IModeBuilder):
         if layer.type.value == LayerType.Dense.value:
             return [tf.keras.layers.Dense(units=layer.units, activation=activation)]
         if layer.type.value == LayerType.Conv.value:
-            return [
-                tf.keras.layers.Reshape((input_shape + (1,)), name="reshape_to_conv"),
+            layers = []
+            # audio features are (T, F) and need a channel axis, images are already (H, W, C)
+            if len(input_shape) == 2:
+                layers.append(tf.keras.layers.Reshape((input_shape + (1,)), name="reshape_to_conv"))
+            layers += [
                 tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation),
                 tf.keras.layers.MaxPool2D(),
                 tf.keras.layers.Lambda(lambda x: tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x), name='reshape_after_conv')
             ]
+            return layers
         if layer.type.value == LayerType.GRU.value:
             layers = [
                 tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True)]
@@ -50,9 +54,9 @@ class ModeBuilder(IModeBuilder):
 
     def _get_loss(self, loss: LossType):
         if loss.value == LossType.BinaryCrossentropy.value:
-            return tf.keras.losses.CategoricalCrossentropy(from_logits=True)
+            return tf.keras.losses.CategoricalCrossentropy(from_logits=False)
         if loss.value == LossType.SparseCategoricalCrossentropy.value:
-            return tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+            return tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
         else:
             raise ValueError(f"Unsupported loss: {loss}")
 

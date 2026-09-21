@@ -5,7 +5,7 @@ from os.path import join
 
 from src.assets_service.assets_service_interface import IAssetsService
 from src.data_set.data_set_cooker import DataSetCooker
-from src.definitions import EMULATE_MODE
+from src.definitions import EMULATE_MODE, DATA_SET_TYPE
 from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
 from src.experiment.experiment_summarize_service.expirement_summarize_service_interface import \
     IExperimentSummarizeService
@@ -15,7 +15,6 @@ from src.experiment.models.experiment_step_model_service import ExperimentStepMo
 from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
 from src.model_schema.model_schema_types import IModelSchema
 from src.model_validator.model_record_label.model_record_label import ModelRecordLabeler
-from src.model_validator.model_record_evaluator.model_record_evaluator import ModelRecordEvaluator
 from src.model_validator.mode_validator import ModeValidator
 from src.model_validator.model_result_parser.model_result_parser import ModelResultParser
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
@@ -31,14 +30,14 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
         self.mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
-        self.model_record_evaluator = ModelRecordEvaluator(ModelResultParser(af_strategy=af_strategy))
 
         self._experiment_model = experiment_model
         self._details = self._experiment_model_service.get_details(self._experiment_model.id)
         self.data_set_cooker = DataSetCooker(experiment_id=self._experiment_model.id, af_strategy=af_strategy)
         self.result_path = join(self.assets_service.get_experiment_path(), 'results')
-        self.model_record_label_service = ModelRecordLabeler(ModelResultParser(af_strategy=af_strategy),
-                                                             export_path=self.result_path)
+        # image data sets have no validation recordings to label
+        self.model_record_label_service = None if af_strategy is None else ModelRecordLabeler(
+            ModelResultParser(af_strategy=af_strategy), export_path=self.result_path)
         self._experiment_step = ExperimentStep(self._experiment_model.id, af_strategy)
         self.model_exporter = ModelExporter(af_strategy=af_strategy)
         self.model_weights_service = ModelWeightsExporter(self.assets_service)
@@ -54,6 +53,12 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
     def _log_experiment_details(self, best_step, best_schema, record_acc, validation_acc):
         self.logger.log(f"Experiment {self._experiment_model.id} summary:")
         self.logger.log("")
+        if DATA_SET_TYPE == 'image':
+            self.logger.log(f"Best step [{best_step.validation_accuracy}] - {best_step.step}, with id {best_step.id}")
+            self.logger.log(f"schema: {str(best_schema)}")
+            self.logger.log(f"Validation accuracy: {validation_acc}")
+            self.logger.log("")
+            return
         self.logger.log(
             f"Best step [{best_step.record_accuracy}, {best_step.validation_accuracy}] - {best_step.step}, with id {best_step.id}")
         self.logger.log(f"schema: {str(best_schema)}")
@@ -73,15 +78,16 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
             record_results = []
             record_images = []
             # generate results and save them locally
-            for image_path, name in self.model_record_label_service.label_records(model=model,
-                                                                                  from_path=self.assets_service.get_validation_records_path()):
-                record_images.append(image_path)
-                record_results.append(RecordResultModel(
-                    experiment_step_id=best_step.id,
-                    image=self._get_image_model(path=image_path),
-                    name=name,
-                    accuracy=float(record_acc_dic.get(name, 0)),
-                ))
+            if self.model_record_label_service is not None:
+                for image_path, name in self.model_record_label_service.label_records(model=model,
+                                                                                      from_path=self.assets_service.get_validation_records_path()):
+                    record_images.append(image_path)
+                    record_results.append(RecordResultModel(
+                        experiment_step_id=best_step.id,
+                        image=self._get_image_model(path=image_path),
+                        name=name,
+                        accuracy=float(record_acc_dic.get(name, 0)),
+                    ))
 
             self.model_exporter.export_model(model, path=self.assets_service.get_model_path(), labels=labels)
             mode_plot_path = self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())

@@ -1,6 +1,6 @@
 from src.assets_service.assets_service import AssetsService
 from src.data_set.data_set_cooker import DataSetCooker
-from src.data_set.data_set_importer import DataSetImporter
+from src.data_set.data_set_importer_factory import create_data_set_importer
 from src.database.schema import ExperimentStepModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
 from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
@@ -27,7 +27,8 @@ class ExperimentStep(IExperimentStep):
         self.experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self.experiment_data_set_details = self.experiment_model_service.get_data_set_details(experiment_id)
         self.data_set_cooker = DataSetCooker(experiment_id=experiment_id, af_strategy=af_strategy)
-        self.data_set_importer = DataSetImporter(experiment_id=experiment_id, af_strategy=af_strategy, duration=self.experiment_data_set_details.duration)
+        self.data_set_importer = create_data_set_importer(experiment_id=experiment_id, af_strategy=af_strategy,
+                                                          duration=self.experiment_data_set_details.duration)
         self._experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id=experiment_id, af_strategy=af_strategy)
 
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
@@ -41,7 +42,7 @@ class ExperimentStep(IExperimentStep):
         return ModelSchema(layers=layers, optimizer=OptimizerType(shema.optimizer), loss=LossType(shema.loss))
 
     def get_best_step(self, steps: list[ExperimentStepModel]) -> ExperimentStepModel:
-        return max(steps, key=lambda x: x.record_accuracy)
+        return max(steps, key=lambda x: x.accuracy_delta)
 
     def run(self, schema: IModelSchema, epochs: int) -> ExperimentStepModel:
         self.data_set_cooker.step_prepare(self.experiment_data_set_details.duration, self.experiment_data_set_details.argumentation_types)

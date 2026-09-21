@@ -6,7 +6,7 @@ from src.data_set.utils.data_set_filter import DataSetFilter
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
-from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME, SKIP_FILTER
+from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME, SKIP_FILTER, DATA_SET_TYPE
 from src.data_set.types import ArgumentationTypes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
@@ -15,7 +15,11 @@ from src.definitions import ASSETS_PATH, VALIDATION_RECORDS_COUNT
 
 class DataSetCooker:
     def __init__(self, experiment_id: int, af_strategy: IAFStrategy):
+        self.logger = Logger('DataSet')
         self._asset_service = AssetsService(experiment_id=experiment_id)
+        if DATA_SET_TYPE == 'image':
+            # image data set is used as is: no split, filter, augmentation or validation recordings
+            return
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
         self.model_path = join(self.experiment_path, 'model')
         datasets_path = self._asset_service.get_data_set_path()
@@ -31,10 +35,11 @@ class DataSetCooker:
                                              sub_sets=sub_sets, labels=labels, af_strategy=af_strategy,
                                              assets_service=self._asset_service, experiment_id=experiment_id)
 
-        self.logger = Logger('DataSet')
         self._datasets_path = datasets_path
 
     def remove_data_set(self):
+        if DATA_SET_TYPE == 'image':
+            return
         if exists(self._datasets_path):
             shutil.rmtree(self._datasets_path)
             self.logger.log(f'Previous Data set removed', color='green')
@@ -80,6 +85,8 @@ class DataSetCooker:
         return self.data_set_filter.filter(duration=duration)
 
     def step_prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
+        if DATA_SET_TYPE == 'image':
+            return False
         is_filtered = self._filter_data_set(duration)
         print(f'is_filtered: {is_filtered}')
         if not is_filtered:
@@ -89,6 +96,9 @@ class DataSetCooker:
         return is_filtered or is_argumeted
 
     def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
+        if DATA_SET_TYPE == 'image':
+            self.logger.log('Image data set is used as is. Nothing to prepare', color='green')
+            return
         self.remove_data_set()
         self._split_data_set(duration)
         is_filtered = self._filter_data_set(duration)
