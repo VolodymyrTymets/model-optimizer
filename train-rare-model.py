@@ -59,38 +59,25 @@ def preprocess_data():
 
 
 def build_model(train_ds, val_ds, test_ds, label_names):
-    input_shape = None
-    for example, example_spect_labels in train_ds.take(1):
-        input_shape = example.shape[1:]
-    norm_layer = tf.keras.layers.Normalization(name='normalization')
-    norm_layer.adapt(data=train_ds.map(
-        map_func=lambda spec, label: spec))
-
     model = models.Sequential([
         layers.Input(shape=input_shape),
-        # Downsample the input.
-        # layers.Resizing(32, 32),
-        # Normalize.
-        norm_layer,
+        tf.keras.layers.Normalization(name='normalization'),
         tf.keras.layers.Reshape((input_shape + (1,)), name="reshape_to_conv"),
         layers.Conv2D(32, 3, activation='relu'),
-        layers.Conv2D(64, 3, activation='relu'),
         layers.MaxPooling2D(),
-        layers.Dropout(0.25),
-        layers.Flatten(),
-        layers.Dense(128, activation='relu'),
         layers.Dropout(0.5),
+        layers.Flatten(),
         layers.Dense(len(labels), activation='softmax')
     ])
-    model.get_layer('normalization').adapt(train_ds.map(lambda x, label: x))
-
     model.summary()
-
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=['accuracy'],
     )
+    model.fit(train_ds, validation_data=val_ds, epochs=100, callbacks=[
+        tf.keras.callbacks.EarlyStopping(monitor='val_loss')])
+
     return model
 
 
@@ -125,7 +112,7 @@ def main():
     mode_validator = ModeValidator(logger=Logger('ModeValidator'), af_strategy=af_strategy)
 
     record_acc, validation_acc, record_acc_dic = mode_validator.validate(model=model, data=test_ds,
-                                                                              validation_records_path=assets_service.get_validation_records_path())
+                                                                         validation_records_path=assets_service.get_validation_records_path())
 
     print(f"Validation accuracy: {validation_acc}")
     print(f"Record accuracy: {record_acc}")
@@ -137,7 +124,7 @@ def main():
     print(f"Labeling records...")
     print(f"From {assets_service.get_validation_records_path()}")
     for image_path, name in model_record_label_service.label_records(model=model,
-            from_path=assets_service.get_validation_records_path()):
+                                                                     from_path=assets_service.get_validation_records_path()):
         print(f"Labeled {image_path}")
 
 

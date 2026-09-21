@@ -6,7 +6,7 @@ from src.data_set.utils.data_set_filter import DataSetFilter
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
-from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME
+from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME, SKIP_FILTER
 from src.data_set.types import ArgumentationTypes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
@@ -73,6 +73,9 @@ class DataSetCooker:
 
     def _filter_data_set(self, duration: float = 0.5):
         if EMULATE_MODE:
+            return False
+        if SKIP_FILTER:
+            self.logger.log(f'Skipping filter cause of SKIP_FILTER', color='green')
             return False
         return self.data_set_filter.filter(duration=duration)
 
