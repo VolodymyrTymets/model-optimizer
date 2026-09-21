@@ -1,8 +1,8 @@
 # Default local store for experiment-progress logging.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer"
+DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer-image"
 
 ASSETS_PATH = 'assets'
-DATA_SET_NAME = 'data_set_emg'
+DATA_SET_NAME = 'brain-tumor-mri-dataset'
 VERBOSE = True
 EMULATE_MODE = False
 SKIP_FILTER = True
