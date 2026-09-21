@@ -13,6 +13,9 @@ class SignalTransformer:
   def calc_fragment_size(self, duration: float):
     return int(self.sr / (1 / duration))
 
+  def resample(self, signal: np.array, sr: int):
+    return librosa.resample(signal, orig_sr=sr, target_sr=self.sr)
+
   def split(self, signal: np.array,  duration: float):
     fragment_size = self.calc_fragment_size(duration)
     fragment_count = len(signal) // fragment_size

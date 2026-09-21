@@ -6,7 +6,7 @@ from src.data_set.utils.data_set_filter import DataSetFilter
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
-from src.definitions import labels, sub_sets, EMULATE_MODE
+from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME, SKIP_FILTER
 from src.data_set.types import ArgumentationTypes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
@@ -19,7 +19,7 @@ class DataSetCooker:
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
         self.model_path = join(self.experiment_path, 'model')
         datasets_path = self._asset_service.get_data_set_path()
-        self.data_set_splitter = DataSetSplitter(in_path=join(ASSETS_PATH, 'data_set'),
+        self.data_set_splitter = DataSetSplitter(in_path=join(ASSETS_PATH, DATA_SET_NAME),
                                                  out_path=datasets_path, sub_sets=sub_sets, labels=labels)
         self.data_set_transformer = DataSetTransformer(in_path=datasets_path, out_path=datasets_path,
                                                        sub_sets=sub_sets,
@@ -41,7 +41,7 @@ class DataSetCooker:
 
     def _split_data_set(self, duration: float = 0.5):
         if exists(self._asset_service.get_data_set_path()):
-            self.logger.log(f'Data set already splitted', color='green')
+            self.logger.log(f'Data set already split', color='green')
             return
         self.logger.log(f'Splitting data set into train and test sets with duration: {duration}', color='blue')
         self.data_set_splitter.split(duration)
@@ -74,12 +74,15 @@ class DataSetCooker:
     def _filter_data_set(self, duration: float = 0.5):
         if EMULATE_MODE:
             return False
+        if SKIP_FILTER:
+            self.logger.log(f'Skipping filter cause of SKIP_FILTER', color='green')
+            return False
         return self.data_set_filter.filter(duration=duration)
 
     def step_prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
         is_filtered = self._filter_data_set(duration)
         print(f'is_filtered: {is_filtered}')
-        if is_filtered is False:
+        if not is_filtered:
             return False
         is_argumeted = self._argument_data_set(argumentation_types=argumentation_types)
         print(f'is_argumeted: {is_argumeted}')

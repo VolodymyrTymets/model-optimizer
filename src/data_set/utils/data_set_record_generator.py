@@ -56,7 +56,10 @@ class DataSetRecordGenerator(DataSetFileWorker):
         label_order = labels.copy()
         for label in except_labels:
             label_order.remove(label)
-        label_order.remove(between_fragment_label)
+        try:
+            label_order.remove(between_fragment_label)
+        except ValueError:
+            pass
         label_records = [[] for _ in label_order]
 
 

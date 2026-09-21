@@ -1,7 +1,7 @@
 from os.path import join
 
 from src.assets_service.assets_service_interface import IAssetsService
-from src.definitions import ASSETS_PATH
+from src.definitions import ASSETS_PATH, DATA_SET_NAME
 from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.utils.logger.logger_service import Logger
 
@@ -10,7 +10,7 @@ class AssetsService(IAssetsService):
     def __init__(self, experiment_id):
         self.experiment_path = join(ASSETS_PATH, f'experiment-{experiment_id}')
         self.experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
-        self.out_data_set_name = 'data_set'
+        self.out_data_set_name = DATA_SET_NAME
         self.validation_records_folder_name = 'validation-records'
         self.model_path = join(self.experiment_path, 'model')
         self.experiment_id = experiment_id

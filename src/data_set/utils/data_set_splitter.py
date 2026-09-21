@@ -13,6 +13,9 @@ class DataSetSplitter(DataSetFileWorker):
         self.files.create_folder(self.out_path)
         for i, data in enumerate(self.read_data_set()):
             signal, sr, set_name, label, path, file = data
+            if sr != SR:
+                signal = self.transformer.resample(signal=signal, sr=sr)
+                print(f'Signal is reshaped to new simple rate: {sr}')
             fragments = self.transformer.split(signal=signal, duration=duration)
             for time_index, fragment in enumerate(fragments):
                 prefix = str(i + time_index) + f'_{keet_prefix}' if keet_prefix in file else ''
