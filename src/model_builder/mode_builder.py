@@ -1,6 +1,9 @@
+from typing import Sequence
+
 import tensorflow as tf
 
-from src.definitions import EMULATE_MODE, labels
+from src.data_set.types import ArgumentationTypes
+from src.definitions import EMULATE_MODE, labels, DATA_SET_TYPE
 from src.model_builder.mode_builder_interface import IModeBuilder
 from src.model_schema.model_schema_types import IModelSchema, ActivationType, ILayerSchema, LayerType, OptimizerType, \
     LossType
@@ -20,7 +23,7 @@ class ModeBuilder(IModeBuilder):
             return tf.nn.sigmoid
         return None
 
-    def _build_layer(self, layer: ILayerSchema, input_shape):
+    def _build_layer(self, layer: ILayerSchema, input_shape, current_shape):
         activation = self._get_activation(layer.activation)
         if layer.type.value == LayerType.Dense.value:
             return [tf.keras.layers.Dense(units=layer.units, activation=activation)]
@@ -30,14 +33,18 @@ class ModeBuilder(IModeBuilder):
             if len(input_shape) == 2:
                 layers.append(tf.keras.layers.Reshape((input_shape + (1,)), name="reshape_to_conv"))
             layers += [
-                tf.keras.layers.Conv2D(layer.units, kernel_size=2, activation=activation),
+                tf.keras.layers.Conv2D(layer.units, kernel_size=3, padding='same', activation=activation),
                 tf.keras.layers.MaxPool2D(),
-                tf.keras.layers.Lambda(lambda x: tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x), name='reshape_after_conv')
+                # tf.keras.layers.Lambda(lambda x: tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3]))(x), name='reshape_after_conv')
             ]
             return layers
         if layer.type.value == LayerType.GRU.value:
-            layers = [
-                tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True)]
+            layers = []
+            # GRU needs (time, features): images (H, W, C) are read as H time steps of W*C features
+            if len(current_shape) == 3:
+                layers.append(tf.keras.layers.Reshape((current_shape[0], current_shape[1] * current_shape[2]),
+                                                      name="reshape_to_gru"))
+            layers.append(tf.keras.layers.GRU(units=layer.units, activation=activation, return_sequences=True))
             return layers
         else:
             raise ValueError(f"Unsupported layer type: {layer.type}")
@@ -60,7 +67,27 @@ class ModeBuilder(IModeBuilder):
         else:
             raise ValueError(f"Unsupported loss: {loss}")
 
-    def build_model(self, schema: IModelSchema, train_ds: tf.data.Dataset) -> tf.keras.Model:
+    def _get_augmentation_layers(self, argumentation_types: Sequence[ArgumentationTypes]):
+        layers = []
+        for argumentation_type in argumentation_types:
+            if argumentation_type == ArgumentationTypes.RandomFlip:
+                layers.append(tf.keras.layers.RandomFlip("horizontal_and_vertical"))
+            elif argumentation_type == ArgumentationTypes.RandomRotation:
+                layers.append(tf.keras.layers.RandomRotation(0.1))
+            elif argumentation_type == ArgumentationTypes.RandomZoom:
+                layers.append(tf.keras.layers.RandomZoom(0.1))
+        return layers
+
+    def _get_normalization_layers(self, train_ds: tf.data.Dataset):
+        if DATA_SET_TYPE == 'image':
+            # pixels are already bounded to 0..255, so a fixed rescale is enough
+            return [tf.keras.layers.Rescaling(1. / 255)]
+        norm_layer = tf.keras.layers.Normalization(name='normalization')
+        norm_layer.adapt(data=train_ds.map(lambda spec, label: spec))
+        return [norm_layer]
+
+    def build_model(self, schema: IModelSchema, train_ds: tf.data.Dataset,
+                    argumentation_types: Sequence[ArgumentationTypes] = ()) -> tf.keras.Model:
         self._logger.log(f"Building model schema: {str(schema)}", color="yellow")
         if EMULATE_MODE:
             return tf.keras.Sequential()
@@ -69,21 +96,20 @@ class ModeBuilder(IModeBuilder):
         for example, example_spect_labels in train_ds.take(1):
             input_shape = example.shape[1:]
 
-        norm_layer = tf.keras.layers.Normalization(name='normalization')
-        norm_layer.adapt(data=train_ds.map(
-            map_func=lambda spec, label: spec))
-
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Input(shape=input_shape))
-        model.add(norm_layer)
+        # random augmentation layers are only active while training
+        if DATA_SET_TYPE == 'image':
+            for augmentation_layer in self._get_augmentation_layers(argumentation_types):
+                model.add(augmentation_layer)
+        for normalization_layer in self._get_normalization_layers(train_ds):
+            model.add(normalization_layer)
         for layer in schema.layers:
-            for sublayer in self._build_layer(layer, input_shape):
+            for sublayer in self._build_layer(layer, input_shape, model.output_shape[1:]):
                 model.add(sublayer)
-            model.add(tf.keras.layers.Dropout(0.5))
+            model.add(tf.keras.layers.Dropout(0.2))
         model.add(tf.keras.layers.Flatten())
         model.add(tf.keras.layers.Dense(len(labels), activation='softmax'))
-        model.get_layer('normalization').adapt(train_ds.map(lambda x, label: x))
-
 
         model.compile(
             optimizer=self._get_optimizer(schema.optimizer),

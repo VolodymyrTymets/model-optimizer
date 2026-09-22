@@ -47,22 +47,27 @@ class Experiments:
         # raise Exception("!!! STOP")
         experiment.finish()
 
-    def run_image(self, model_setting: IExperimentDetails, train: bool = True):
-        # image data set: no audio feature, duration or audio argumentation, so store neutral placeholders
-        data_set_details = ExperimentDataSetDetails(
-            duration=0.0, labels=labels, argumentation_types=[], af_type=AFTypes.none
-        )
-        experiment = self.create_experiment(experiment_details=model_setting, data_set_details=data_set_details,
-                                            af_strategy=None)
-        if experiment.is_finished():
-            return
-        if train:
-            self.train_experiment(experiment=experiment, af_strategy=None)
+    def run_image(self, model_setting: IExperimentDetails,
+                  argumentation_types: Optional[list[ArgumentationTypes]] = None, train: bool = True):
+        # image data set: no audio feature or duration, so store neutral placeholders. Argumentation is applied
+        # inside the model (Keras Random* layers), each experiment adds one more type cumulatively.
+        exp_argumentation_types = []
+        for argumentation_type in argumentation_types or [ArgumentationTypes.nothing]:
+            exp_argumentation_types.append(argumentation_type)
+            data_set_details = ExperimentDataSetDetails(
+                duration=0.0, labels=labels, argumentation_types=list(exp_argumentation_types), af_type=AFTypes.none
+            )
+            experiment = self.create_experiment(experiment_details=model_setting, data_set_details=data_set_details,
+                                                af_strategy=None)
+            if experiment.is_finished():
+                continue
+            if train:
+                self.train_experiment(experiment=experiment, af_strategy=None)
 
     def run(self, model_setting: IExperimentDetails, af_types: Optional[list[AFTypes]] = None,
             argumentation_types: Optional[list[ArgumentationTypes]] = None, train: bool = True):
         if DATA_SET_TYPE == 'image':
-            return self.run_image(model_setting=model_setting, train=train)
+            return self.run_image(model_setting=model_setting, argumentation_types=argumentation_types, train=train)
         exp_argumentation_types = []
         for af_type in af_types:
             for argumentation_type in argumentation_types:

@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from src.assets_service.assets_service import AssetsService
 from src.database.schema import ExperimentStepModel
+from src.experiment.models.experiment_model_service import ExperimentModelService
 from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
 from src.model_schema.model_schema_types import IModelSchema, ModelSchema, LayerType, LayerSchema, ActivationType, \
     RegularizerType, OptimizerType, LossType
@@ -23,6 +24,7 @@ class ExperimentStepModelCooker:
         self._model_weights_service = ModelWeightsExporter(self.assets_service)
         self._logger = Logger('ExperimentStep')
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
+        self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self._model_weights_service = ModelWeightsExporter(self.assets_service)
 
     def get_schema(self, step: ExperimentStepModel) -> IModelSchema:
@@ -39,7 +41,8 @@ class ExperimentStepModelCooker:
         train_ds, val_ds, test_ds = data_sets
         best_step = self._experiment_step_model_service.get_step(step_id=step_id)
         best_schema = self.get_schema(step=best_step)
-        model = self._model_builder.build_model(best_schema, train_ds)
+        argumentation_types = self._experiment_model_service.get_data_set_details(self.experiment_id).argumentation_types
+        model = self._model_builder.build_model(best_schema, train_ds, argumentation_types)
         restored_weights = self._model_weights_service.import_weights(model, best_step.id)
         if restored_weights is not None:
            model.set_weights(restored_weights)
