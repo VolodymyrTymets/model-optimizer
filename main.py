@@ -14,10 +14,10 @@ def main():
             model_setting=ExperimentDetails(
                 epochs=100,
                 batch_size=32,
-                layers=[LayerType.Conv, LayerType.Conv, LayerType.Conv, LayerType.Dense],
-                activation=[ActivationType.ReLU],
+                layers=[LayerType.Conv, LayerType.Dense],
+                activation=[ActivationType.ReLU, ActivationType.Sigmoid],
                 units_range=[16, 128],
-                optimizer=[OptimizerType.Adam],
+                optimizer=[OptimizerType.Adam, OptimizerType.AdamW, OptimizerType.Rmsprop],
                 regularizer=[RegularizerType.L1],
                 loss=[LossType.SparseCategoricalCrossentropy],
             ),
