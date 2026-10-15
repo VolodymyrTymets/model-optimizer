@@ -4,6 +4,7 @@
 - **Status:** accepted
 - **Deciders:** maintainer (retroactive)
 - **Ticket:** none
+- **Amended by:** ADR-005 (a TFLite export now ships beside the SavedModel)
 
 _Recorded retroactively on 2026-10-15 from the code during `/setup`; not re-litigated._
 

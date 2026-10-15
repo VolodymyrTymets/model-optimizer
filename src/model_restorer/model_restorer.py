@@ -57,7 +57,9 @@ class ModelRestorer(IModelRestorer):
         path, mode_name = asset_service.get_models_path()
         export_path = self.files.join(path, mode_name)
         self.loger.log(f"Exporting model into {export_path}")
+        model_exporter.remove_tflite_export(export_path)
         model_exporter.export_model(mode, label_names, export_path)
+        model_exporter.export_tflite_model(mode, label_names, export_path)
         self.loger.log(f"Model saved", color="green")
 
     def restore_best_step(self):
