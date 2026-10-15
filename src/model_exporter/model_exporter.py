@@ -1,3 +1,7 @@
+import json
+import os
+from typing import Sequence
+
 import tensorflow as tf
 import numpy as np
 from matplotlib import pyplot as plt
@@ -7,6 +11,9 @@ from src.utils.files import Files
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_instance.model_instance import ModelInstance
 from src.definitions import DURATION
+
+TFLITE_FILE_NAME = 'model.tflite'
+SETTINGS_FILE_NAME = 'model_settings.json'
 
 
 class ModelExporter:
@@ -26,6 +33,40 @@ class ModelExporter:
             'get_settings': export.get_settings,
         })
         self.loger.log('Model is saved to: {}'.format(path), 'green')
+
+    def export_tflite_model(self, model: tf.keras.Model, labels: Sequence[str], path: str) -> str:
+        folder = self._get_export_path(path)
+        self.files.create_folder(folder)
+        tflite_path = self.files.join(folder, TFLITE_FILE_NAME)
+        settings_path = self.files.join(folder, SETTINGS_FILE_NAME)
+        tmp_tflite_path, tmp_settings_path = tflite_path + '.tmp', settings_path + '.tmp'
+
+        try:
+            tflite_model = tf.lite.TFLiteConverter.from_keras_model(model).convert()
+            # the .tflite returns probabilities only, so the device reads names and input from this file
+            settings = {
+                'labels': [str(label) for label in labels],
+                'af_type': self.af_strategy.AFType.value,
+                'duration': str(DURATION),
+                'input_shape': list(model.input_shape[1:]),
+            }
+            with open(tmp_tflite_path, 'wb') as tflite_file:
+                tflite_file.write(tflite_model)
+            with open(tmp_settings_path, 'w') as settings_file:
+                json.dump(settings, settings_file)
+            # renamed only when both are written, so the pair is never half there
+            os.replace(tmp_tflite_path, tflite_path)
+            os.replace(tmp_settings_path, settings_path)
+        except Exception as error:
+            self.loger.error(error)
+            # a file left from a previous export would sit next to the new SavedModel and be shipped by mistake
+            for leftover in (tmp_tflite_path, tmp_settings_path, tflite_path, settings_path):
+                if self.files.is_exist(leftover):
+                    self.files.remove(leftover)
+            raise
+
+        self.loger.log('TFLite model is saved to: {}'.format(tflite_path), 'green')
+        return tflite_path
 
     def load_model(self, path: str):
         self.loger.log(f'Loading model from: {path}', 'blue')
