@@ -1,0 +1,86 @@
+{
+  "enabledPlugins": {
+    "rln-agent@rln": true
+  },
+  "extraKnownMarketplaces": {
+    "rln": {
+      "source": {
+        "source": "github",
+        "repo": "VolodymyrTymets/rln-agent"
+      }
+    }
+  },
+  "permissions": {
+    "defaultMode": "default",
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(!.env.example)",
+      "Read(!.env.sample)",
+      "Read(!.env.template)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)",
+      "Read(./**/*.p8)",
+      "Read(./**/*.p12)",
+      "Read(./**/*.jks)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.mobileprovision)",
+      "Read(./**/id_rsa*)",
+      "Read(./**/*credentials*.json)",
+      "Read(./**/*service-account*.json)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr review:*)",
+      "Bash(gh pr ready:*)",
+      "Bash(gh release create:*)",
+      "Bash(git push --force:*)",
+      "Bash(twine upload:*)",
+      "Bash(uv publish:*)",
+      "Bash(poetry publish:*)",
+      "mcp__github__merge*",
+      "Read(./assets/**)",
+      "Read(./**/.pypirc)",
+      "Read(./**/.netrc)",
+      "Read(./**/.npmrc)",
+      "Bash(python -m twine upload:*)",
+      "Bash(.venv/bin/python -m twine upload:*)"
+    ],
+    "allow": [
+      "Read(./**)",
+      "Grep",
+      "Glob",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git switch:*)",
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "mcp__context7__*",
+      "mcp__serena__*",
+      "Bash(.venv/bin/pip install -r requirements.txt:*)",
+      "Bash(.venv/bin/pip check:*)",
+      "Bash(.venv/bin/pip list:*)",
+      "Bash(.venv/bin/python -m py_compile:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh issue:*)",
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Edit(.github/workflows/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(.claude/**)",
+      "mcp__github__create*",
+      "mcp__github__update*",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(.venv/bin/python main.py:*)",
+      "Bash(.venv/bin/python train-rare-model.py:*)",
+      "Bash(.venv/bin/python export-best-model.py:*)",
+      "Edit(requirements*.txt)",
+      "Edit(src/definitions.py)"
+    ]
+  }
+}
