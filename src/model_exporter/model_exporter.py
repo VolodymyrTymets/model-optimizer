@@ -21,21 +21,20 @@ class ModelExporter:
         self.files = Files()
         self.loger = Logger('ModelExporter')
         self.af_strategy = af_strategy
-        self._signature = f'_{DURATION}_{str(self.af_strategy.AFType.value)}'
 
-    def _get_export_path(self, path: str):
-        return path + self._signature
+    def _get_export_path(self, path: str, subdir: str = ''):
+        return self.files.join(path, subdir)
 
     def export_model(self, model, labels, path: str):
         export = ModelInstance(model, labels, self.af_strategy.AFType, str(DURATION))
 
-        tf.saved_model.save(export, self._get_export_path(path), signatures={
+        tf.saved_model.save(export, path, signatures={
             'get_settings': export.get_settings,
         })
         self.loger.log('Model is saved to: {}'.format(path), 'green')
 
     def export_tflite_model(self, model: tf.keras.Model, labels: Union[Sequence[str], np.ndarray], path: str) -> str:
-        folder = self._get_export_path(path)
+        folder = self._get_export_path(path, 'tflite')
         self.files.create_folder(folder)
         tflite_path = self.files.join(folder, TFLITE_FILE_NAME)
         settings_path = self.files.join(folder, SETTINGS_FILE_NAME)
@@ -72,7 +71,7 @@ class ModelExporter:
 
     def remove_tflite_export(self, path: str) -> None:
         # a file left from a previous export would sit next to a new SavedModel and be shipped by mistake
-        folder = self._get_export_path(path)
+        folder = self._get_export_path(path, 'tflite')
         for name in (TFLITE_FILE_NAME, SETTINGS_FILE_NAME, TFLITE_FILE_NAME + '.tmp', SETTINGS_FILE_NAME + '.tmp'):
             leftover = self.files.join(folder, name)
             try:
