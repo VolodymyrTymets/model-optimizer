@@ -97,6 +97,9 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
                                                                            training_history_plot=self._get_image_model(
                                                                                path=training_plot_path))
 
+            # after the DB writes: a model that will not convert must not lose the results above
+            self.model_exporter.export_tflite_model(model, path=self.assets_service.get_model_path(), labels=labels)
+
         self.logger.log("Experiment summarized finished", color="green")
 
         self._log_experiment_details(best_step, best_schema, record_acc, validation_acc)
