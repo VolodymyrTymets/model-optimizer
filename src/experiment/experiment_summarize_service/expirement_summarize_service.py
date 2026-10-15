@@ -83,6 +83,9 @@ class ExperimentSummarizeService(IExperimentSummarizeService):
                     accuracy=float(record_acc_dic.get(name, 0)),
                 ))
 
+            # the TFLite pair is rewritten after the DB writes; until then no previous step's file may sit
+            # next to the SavedModel written here
+            self.model_exporter.remove_tflite_export(path=self.assets_service.get_model_path())
             self.model_exporter.export_model(model, path=self.assets_service.get_model_path(), labels=labels)
             mode_plot_path = self.model_exporter.export_model_plot(model, path=self.assets_service.get_model_path())
             training_plot_path = self.model_exporter.export_training_plot(history,

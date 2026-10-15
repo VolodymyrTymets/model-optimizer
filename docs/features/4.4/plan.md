@@ -74,11 +74,11 @@ interface for `ModelExporter` today and this plan does not either.
   Postgres writes and the SavedModel are already done; see Risks
 
 ## Docs to update in this PR
-- [ ] docs/features/4.4/spec.md (acceptance criteria checked off)
-- [ ] docs/ARCHITECTURE.md — "Exported model" row of the contracts table and the `src/model_exporter` repo-layout row
-- [ ] docs/DOMAIN_GLOSSARY.md — TFLite model, model settings sidecar
-- [ ] docs/RUNBOOK.md — Release section: the `.tflite` file is what is copied to the device
-- [ ] docs/decisions/ADR-005 — unconditional: `.tflite` (float32, builtin ops) + `model_settings.json` sidecar
+- [x] docs/features/4.4/spec.md (acceptance criteria checked off)
+- [x] docs/ARCHITECTURE.md — "Exported model" row of the contracts table and the `src/model_exporter` repo-layout row
+- [x] docs/DOMAIN_GLOSSARY.md — TFLite model, model settings sidecar
+- [x] docs/RUNBOOK.md — Release section: the `.tflite` file is what is copied to the device
+- [x] docs/decisions/ADR-005 — unconditional: `.tflite` (float32, builtin ops) + `model_settings.json` sidecar
       beside the SavedModel is a contract with the external device; states that it amends ADR-001 (the device
       runtime now needs a flatbuffer, not only a SavedModel). It also records the tensor contract: input is the
       raw Keras input (float32, batch dimension, no reshape), output is the probabilities only (no `class_names`,

@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Sequence
+from typing import Sequence, Union
 
 import tensorflow as tf
 import numpy as np
@@ -34,7 +34,7 @@ class ModelExporter:
         })
         self.loger.log('Model is saved to: {}'.format(path), 'green')
 
-    def export_tflite_model(self, model: tf.keras.Model, labels: Sequence[str], path: str) -> str:
+    def export_tflite_model(self, model: tf.keras.Model, labels: Union[Sequence[str], np.ndarray], path: str) -> str:
         folder = self._get_export_path(path)
         self.files.create_folder(folder)
         tflite_path = self.files.join(folder, TFLITE_FILE_NAME)
@@ -58,15 +58,25 @@ class ModelExporter:
             os.replace(tmp_tflite_path, tflite_path)
             os.replace(tmp_settings_path, settings_path)
         except Exception as error:
+            self.loger.log(f'TFLite export failed for {folder}', 'red')
             self.loger.error(error)
-            # a file left from a previous export would sit next to the new SavedModel and be shipped by mistake
-            for leftover in (tmp_tflite_path, tmp_settings_path, tflite_path, settings_path):
-                if self.files.is_exist(leftover):
-                    self.files.remove(leftover)
+            self.remove_tflite_export(path)
             raise
 
         self.loger.log('TFLite model is saved to: {}'.format(tflite_path), 'green')
         return tflite_path
+
+    def remove_tflite_export(self, path: str) -> None:
+        # a file left from a previous export would sit next to a new SavedModel and be shipped by mistake
+        folder = self._get_export_path(path)
+        for name in (TFLITE_FILE_NAME, SETTINGS_FILE_NAME, TFLITE_FILE_NAME + '.tmp', SETTINGS_FILE_NAME + '.tmp'):
+            leftover = self.files.join(folder, name)
+            try:
+                if self.files.is_exist(leftover):
+                    self.files.remove(leftover)
+            except OSError as error:
+                # keep going: the conversion error must stay the one that is raised
+                self.loger.error(error)
 
     def load_model(self, path: str):
         self.loger.log(f'Loading model from: {path}', 'blue')
