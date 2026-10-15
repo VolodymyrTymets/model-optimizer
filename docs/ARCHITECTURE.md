@@ -15,7 +15,7 @@
 | `src/utils/audio_features` | Feature strategies (`wave, ae, rms, zcr, fft, stft, ber, sc, bw, mel, mfcc`) behind `IAFStrategy` + factory | no | maintainer |
 | `src/model_builder`, `model_tuner`, `model_trainer`, `model_schema` | Build, tune (layer/units search), train Keras models; schema enums (`LayerType`, `OptimizerType`, …) | no | maintainer |
 | `src/model_validator` | Validate on held-out records; per-record accuracy, result parsing, labeling | no | maintainer |
-| `src/model_exporter`, `src/model_restorer` | Save TF SavedModel + plots; restore best step | no | maintainer |
+| `src/model_exporter`, `src/model_restorer` | Save TF SavedModel, float32 TFLite + settings sidecar, plots; restore best step | no | maintainer |
 | `src/database` | SQLAlchemy `Base`/tables and `DBClient` singleton | no | maintainer |
 | `src/assets_service` | Resolves every path under `assets/` (data set, experiment, models, validation records) | no | maintainer |
 | `assets/` | **Git-ignored**, 1.6 GB: raw/cooked data sets, per-experiment output, exported models | no | local only |
@@ -29,7 +29,7 @@
 ## Boundaries and contracts
 | Boundary | Format | Source of truth | Generated output (never hand-edited) | Regeneration command |
 |----------|--------|-----------------|--------------------------------------|----------------------|
-| Exported model | TF SavedModel with a `get_settings` signature | `ModelExporter` / `ModelInstance` | `assets/models/**`, `assets/experiment-*/model_*` | `.venv/bin/python main.py` / `train-rare-model.py` |
+| Exported model | TF SavedModel with a `get_settings` signature, plus `model.tflite` and `model_settings.json` beside it (ADR-005) | `ModelExporter` / `ModelInstance` | `assets/models/**`, `assets/experiment-*/model_*` | `.venv/bin/python main.py` / `train-rare-model.py` |
 | Database tables | SQLAlchemy models, `create_all` (no migrations) | `src/database/schema.py` | Postgres tables | created on `Experiments()` construction |
 
 The exported model is consumed by an external device/app that is **not in this repo** — see "Known constraints".

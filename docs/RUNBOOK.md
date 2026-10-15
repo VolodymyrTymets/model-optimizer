@@ -30,4 +30,4 @@ See the command map in `CLAUDE.md` — that is the canonical list. The repo has 
 | TensorFlow/Metal import errors | wrong venv (`.venv` vs `.venv-gpu`) | use the venv that matches the requirements file |
 
 ## Release
-There is no release. Output is an exported SavedModel under `assets/models/`, copied to the device by hand (a human action, rule C4).
+There is no release. Output is an exported SavedModel plus `model.tflite` and `model_settings.json` under `assets/models/`; the `.tflite` and its settings file are what is copied to the device by hand (a human action, rule C4).
