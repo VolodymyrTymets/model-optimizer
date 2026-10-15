@@ -10,7 +10,7 @@ from src.utils.audio_features.strategy.strategies.strategy_interface import IAFS
 from src.utils.files import Files
 from src.utils.logger.logger_service import Logger
 from src.model_exporter.model_instance.model_instance import ModelInstance
-from src.definitions import DURATION
+from src.definitions import DURATION, sr
 
 TFLITE_FILE_NAME = 'model.tflite'
 SETTINGS_FILE_NAME = 'model_settings.json'
@@ -51,6 +51,7 @@ class ModelExporter:
                 'labels': [str(label) for label in labels],
                 'af_type': self.af_strategy.AFType.value,
                 'duration': str(DURATION),
+                'sample_rate': sr,
                 'input_shape': list(model.input_shape[1:]),
             }
             with open(tmp_tflite_path, 'wb') as tflite_file:

@@ -27,7 +27,7 @@ SavedModel. Goal 1 (accuracy) must not drop: the default conversion is float32, 
 - [x] AC1 Given a trained Keras model, when `export_tflite_model` runs for it, then `<export path>/model.tflite` exists beside the SavedModel.
 - [ ] AC6 Given `ExperimentSummarizeService.summarize`, then the TFLite export runs after the Postgres result/plot writes, so a conversion failure cannot lose them. (call order read in the diff and the module compiles and imports; the pipeline was not run, see Q5)
 - [x] AC2 Given the `.tflite` file and a random float32 input of the model's input shape, when run through `tf.lite.Interpreter`, then its output matches the Keras model's `predict` within 1e-4.
-- [x] AC3 Given the export, then `model_settings.json` next to it holds `af_type` and `duration` equal to the reloaded SavedModel's `get_settings` signature, and `labels` equal to the `label_names` the SavedModel's `__call__` returns; it also holds `input_shape` equal to `model.input_shape[1:]`.
+- [x] AC3 Given the export, then `model_settings.json` next to it holds `af_type` and `duration` equal to the reloaded SavedModel's `get_settings` signature, and `labels` equal to the `label_names` the SavedModel's `__call__` returns; it also holds `sample_rate` equal to `sr` in `src/definitions.py` and `input_shape` equal to `model.input_shape[1:]`.
 - [x] AC4 The SavedModel export, `load_model` and `get_settings` behave exactly as before.
 - [x] AC5 A TFLite conversion failure is logged through `Logger('ModelExporter')` and re-raised (rule D5), and leaves no `model.tflite` or `model_settings.json` in that folder, including stale ones from a previous export (files are written under a temporary name and renamed only when both are ready).
 
