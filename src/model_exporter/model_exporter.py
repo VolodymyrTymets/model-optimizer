@@ -42,7 +42,11 @@ class ModelExporter:
         tmp_tflite_path, tmp_settings_path = tflite_path + '.tmp', settings_path + '.tmp'
 
         try:
-            tflite_model = tf.lite.TFLiteConverter.from_keras_model(model).convert()
+            # a fixed batch of 1 gives recurrent layers (GRU/LSTM) a static tensor-list shape, which the builtin
+            # TFLite ops need; a dynamic batch fails with 'TensorListReserve requires element_shape to be static'
+            static_input = tf.keras.Input(batch_shape=(1,) + tuple(model.input_shape[1:]), dtype=tf.float32)
+            static_model = tf.keras.Model(static_input, model(static_input, training=False))
+            tflite_model = tf.lite.TFLiteConverter.from_keras_model(static_model).convert()
             # the .tflite returns probabilities only, so the device reads names and input from this file
             settings = {
                 'labels': [str(label) for label in labels],

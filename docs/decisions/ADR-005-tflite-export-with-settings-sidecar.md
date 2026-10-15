@@ -15,8 +15,9 @@ device needs a `.tflite` flatbuffer. The conversion used to be a manual step out
 ## Decision
 `ModelExporter.export_tflite_model` writes, next to the SavedModel in `<path>_<DURATION>_<af_type>/`:
 - `model.tflite`: float32, builtin ops only, converted with `tf.lite.TFLiteConverter.from_keras_model`.
-  Input is the raw Keras input (float32, batch dimension, no reshape). Output is the probabilities only, with no
-  `class_names`, unlike the SavedModel `__call__`.
+  Input is the raw Keras input at a fixed batch of 1 (float32, shape `[1] + input_shape`, no reshape): a dynamic
+  batch makes GRU/LSTM layers fail to convert with builtin ops (`TensorListReserve requires element_shape to be
+  static`). Output is the probabilities only, with no `class_names`, unlike the SavedModel `__call__`.
 - `model_settings.json`: `labels`, `af_type`, `duration`, `input_shape`, because the flatbuffer carries none of them.
 
 Both files are written under a temporary name and renamed only when both exist. On failure the error is logged,

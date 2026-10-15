@@ -34,6 +34,7 @@ SavedModel. Goal 1 (accuracy) must not drop: the default conversion is float32, 
 ## Edge cases
 | Case | Expected behaviour | Decided by |
 |------|--------------------|-----------|
+| Model has a recurrent layer (GRU/LSTM) | converted with a fixed batch of 1 so builtin ops suffice; the `.tflite` input is `[1] + input_shape` | found when `export-best-model.py` failed on a GRU model |
 | Model contains an op with no TFLite builtin | conversion raises with the converter's message; no silent fallback to Select TF ops | assumption (device runtime unknown) |
 | Export path already holds a `.tflite` | overwritten on success, same as the SavedModel is; removed on failure (AC5) | AC5 |
 | `labels` is a numpy array vs list | stored as a list of str in JSON | code |
