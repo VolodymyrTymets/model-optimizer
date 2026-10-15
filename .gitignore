@@ -220,3 +220,7 @@ __marimo__/
 assets/
 .idea
 .venv-gpu
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/.state/
