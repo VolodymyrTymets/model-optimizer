@@ -7,6 +7,7 @@
 # prerequisites: Python 3.9 (the .venv interpreter; no pin file yet), pip, PostgreSQL on localhost:5432
 python3.9 -m venv .venv
 .venv/bin/pip install -r requirements.txt          # Apple GPU: .venv-gpu with requirements-gpu.txt
+.venv/bin/pip install -r requirements-dev.txt      # pytest, only needed to run the tests
 # database: create one per task you run, owned by postgres/postgres: "model-optimizer-sound" and "model-optimizer-emg" (src/definitions_<task>.py)
 cp .env.example .env                               # then set MODEL_OPTIMIZER_TASK=sound or emg (unset = sound)
 # data: put the recordings under assets/ (git-ignored, not in the repo)
@@ -17,7 +18,7 @@ cp .env.example .env                               # then set MODEL_OPTIMIZER_TA
 ```
 
 ## Commands
-See the command map in `CLAUDE.md` — that is the canonical list. The repo has no tests, linter or build step.
+See the command map in `CLAUDE.md` — that is the canonical list. The repo has no linter or build step; the pytest suite in `tests/` (`.venv/bin/python -m pytest`) covers the validation-record generator only.
 
 ## Undocumented steps everyone knows
 - Before a run, choose the task: `MODEL_OPTIMIZER_TASK=emg .venv/bin/python main.py`, or put the line in the repo-root `.env`. A value set in the shell wins over `.env`. The values per task are in `src/definitions_<task>.py`; EMG-hands and speech are not selectable (ADR-006 keeps their labels).
@@ -26,6 +27,8 @@ See the command map in `CLAUDE.md` — that is the canonical list. The repo has 
 
 - Filtering (`filter-data-set.py`): run it with `--dry-run` first, it logs every file it would move (name, from and to label) plus counts, and moves nothing. That output is recorded data: keep it out of prompts, issues and PRs. The real run moves files in place with no undo, on `train` and `test` (so validation records inherit the model's labels), and writes `__filtered__`; a second run is skipped while that marker exists. The cooked data set must exist (run `main.py` once).
 - Filtering flow (ADR-008): (1) `main.py` on the unfiltered data set (no exported model yet) with `[ArgumentationTypes.nothing]` only, because no augmentation is made while the data set is unfiltered and a finished row for another type would claim augmentation that did not happen; finish or delete any unfinished experiment first, since one resumed after filtering would mix steps trained on two data sets; (2) `export-best-model.py` writes `assets/models/model-<labels>-<duration>-<af_type>` (the grid itself does not); (3) list the feature type that `export-best-model.py` exported first (or only it) in `main.py`, because an experiment for another feature type finds no matching model, stays unfiltered and still records the augmentation it asked for; change `ExperimentDetails` or the augmentation list (never `labels` or `DURATION`: they change the data set folder, so a new unfiltered one would be cooked), or clear the finished experiment row (identical settings are skipped), then `main.py` again: `prepare()` cooks the data set, filters it once with that model (log `moving ...` lines; no exported model: `Skipping filter`), replaces its augmented files with the requested ones, and regenerates the shared validation records because the `test` set changed. `filter-data-set.py <model_name> --dry-run` shows what a model would move without moving; a data set already marked `__filtered__` is kept and not filtered again. To re-cook from the raw recordings, delete the `assets/data_set_*` folder yourself.
+
+- Validation records: every generated record holds at least 30% keep-flagged fragments of the `test` set (`KEEP_RECORDS_SHARE`). An existing `assets/validation-records` folder is kept until the next filtering regenerates it, or until you delete it yourself.
 
 ## Common failures
 | Symptom | Cause | Fix |

@@ -30,14 +30,14 @@ Goal 1 (held-out accuracy): the validation records contain a guaranteed share of
   - reading, listing or editing `assets/` during development (rule P5): tests and checks use synthetic wav files
 
 ## Acceptance criteria
-- [ ] AC1 Given a fragment with `keep` in its name, when the data set is filtered, then it is not moved. Already true
+- [x] AC1 Given a fragment with `keep` in its name, when the data set is filtered, then it is not moved. Already true
       (`data_set_filter.py:106`, ticket 2); confirmed by reading, not changed.
-- [ ] AC2 Given the `test` set holds keep-flagged fragments, when records are generated, then every generated record
+- [x] AC2 Given the `test` set holds keep-flagged fragments, when records are generated, then every generated record
       includes at least one of them.
-- [ ] AC3 Given enough keep-flagged fragments, when records are generated, then at least 30% of the fragments in the
+- [x] AC3 Given enough keep-flagged fragments, when records are generated, then at least 30% of the fragments in the
       generated records are keep-flagged (fragments overall; the same quota applies to every record).
-- [ ] AC4 A pytest test covers the 30% minimum, run with `.venv/bin/python -m pytest`.
-- [ ] AC5 Given too few or no keep-flagged fragments, when records are generated, then generation continues with
+- [x] AC4 A pytest test covers the 30% minimum, run with `.venv/bin/python -m pytest`.
+- [x] AC5 Given too few or no keep-flagged fragments, when records are generated, then generation continues with
       all that exist and `Logger` records the shortfall (no error).
 
 ## Edge cases
