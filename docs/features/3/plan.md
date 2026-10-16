@@ -65,12 +65,12 @@ and the tunables-in-`src/definitions.py` rule P2. No second pattern, so no new-p
 - executed how: re-read against the final code
 
 ## Docs to update in this PR
-- [ ] docs/features/3/spec.md (acceptance criteria checked off)
-- [ ] docs/ARCHITECTURE.md — constraint on records; test layout (`tests/`) in the repo layout table
-- [ ] docs/DOMAIN_GLOSSARY.md — keep flag
-- [ ] docs/RUNBOOK.md — "The repo has no tests" is no longer true
-- [ ] .claude/rules/testing.md — stale "no test suite" line (in R1)
-- [ ] ADR-004 amended for `requirements-dev.txt`; no ADR for the generator (no new pattern)
+- [x] docs/features/3/spec.md (acceptance criteria checked off)
+- [x] docs/ARCHITECTURE.md — constraint on records; test layout (`tests/`) in the repo layout table
+- [x] docs/DOMAIN_GLOSSARY.md — keep flag
+- [x] docs/RUNBOOK.md — "The repo has no tests" is no longer true
+- [x] .claude/rules/testing.md — stale "no test suite" line (in R1)
+- [x] ADR-004 amended for `requirements-dev.txt`; no ADR for the generator (no new pattern)
 
 ## Risks
 | Risk | Impact | Cheapest way to find out early |

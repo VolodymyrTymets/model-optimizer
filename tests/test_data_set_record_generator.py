@@ -35,7 +35,7 @@ def _write_fragment(path: Path, level: float) -> None:
 
 @pytest.fixture
 def make_data_set(tmp_path):
-    def make(keep_per_label: dict, normal_per_label: int = 8) -> DataSetRecordGenerator:
+    def make(keep_per_label: dict, normal_per_label: int = 40) -> DataSetRecordGenerator:
         in_path = tmp_path / 'data_set'
         for label in LABELS:
             for i in range(normal_per_label):
@@ -66,22 +66,30 @@ def _keep_counts(records: list) -> list:
     return [int((fragments > (KEEP_LEVEL + NORMAL_LEVEL) / 2).sum()) for fragments in records]
 
 
+# keep pools are tiny against 40 normal fragments per label, so random picks alone give ~0-1 keep fragments per record
 @pytest.mark.parametrize('record_count', [1, 5], ids=['one-record', 'five-records'])
 @pytest.mark.parametrize('keep_per_label', [
-    {'noise': 3, 'stimulation': 3, 'breath': 3},
-    {'noise': 12, 'stimulation': 12, 'breath': 12},
-    {'noise': 2},
-], ids=['small-pools', 'large-pools', 'noise-only'])
-def test_at_least_30_percent_of_fragments_are_keep_flagged(make_data_set, keep_per_label, record_count):
+    {'noise': 2, 'stimulation': 2, 'breath': 2},
+    {'noise': 1, 'stimulation': 1, 'breath': 1},
+    {'noise': 1},
+], ids=['two-per-label', 'one-per-label', 'noise-only'])
+def test_every_record_has_at_least_30_percent_keep_flagged_fragments(make_data_set, keep_per_label, record_count):
     records = _generate(make_data_set(keep_per_label), record_count)
 
-    total_slots = sum(len(fragments) for fragments in records)
-    assert total_slots == record_count * SLOTS_PER_RECORD
-    assert sum(_keep_counts(records)) / total_slots >= 0.3
+    assert [len(fragments) for fragments in records] == [SLOTS_PER_RECORD] * record_count
+    assert min(_keep_counts(records)) >= MIN_KEEP_PER_RECORD
+
+
+def test_a_single_keep_flagged_fragment_fills_the_quota_by_repeating_itself(make_data_set, capsys):
+    # documents current behaviour (picks are with replacement): the quota counts slots, not distinct fragments
+    records = _generate(make_data_set({'noise': 1}), 1)
+
+    assert min(_keep_counts(records)) >= MIN_KEEP_PER_RECORD
+    assert 'Not enough' not in capsys.readouterr().out
 
 
 def test_every_record_includes_a_keep_flagged_fragment(make_data_set):
-    records = _generate(make_data_set({'noise': 2, 'stimulation': 2, 'breath': 2}), 5)
+    records = _generate(make_data_set({'stimulation': 1}), 5)
 
     assert min(_keep_counts(records)) >= 1
 
@@ -102,7 +110,7 @@ def test_no_keep_flagged_fragment_still_generates_records_and_warns(make_data_se
 
 def test_quota_is_capped_by_what_the_labels_can_supply_and_warns(make_data_set, capsys):
     # one label segment holds 4 slots, so 4 is all the keep fragments that can be placed
-    records = _generate(make_data_set({'stimulation': 6}), 2)
+    records = _generate(make_data_set({'stimulation': 1}), 2)
 
     assert _keep_counts(records) == [4, 4]
     assert f'4 of {MIN_KEEP_PER_RECORD}' in capsys.readouterr().out

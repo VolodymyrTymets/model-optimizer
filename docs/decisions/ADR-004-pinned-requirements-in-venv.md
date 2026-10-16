@@ -13,7 +13,7 @@ The TF / Keras / NumPy / Numba stack is version-sensitive and runs on a laptop w
 ## Decision
 Dependencies are exact `==` pins in `requirements.txt` (CPU) and `requirements-gpu.txt` (adds `tensorflow-metal`), installed into `.venv` / `.venv-gpu`. There is no lockfile, no `pyproject.toml` and no `.python-version`.
 
-_Amended 2026-10-16 (ticket 3):_ a third file, `requirements-dev.txt`, holds the exact-pinned dev-only tools (`pytest` and its dependencies). It is installed on top of either runtime file and never listed in them.
+_Amended 2026-10-16 (ticket 3):_ a third file, `requirements-dev.txt`, holds the exact-pinned dev-only tools (`pytest` and its dependencies). It is installed on top of either runtime file and never listed in them. It does not repeat `packaging` and `Pygments`, which `pytest` also needs: they are already pinned in `requirements.txt`, so the file must be installed on top of it.
 
 ## Rejected alternatives
 | Alternative | Why not |

@@ -43,7 +43,7 @@ Goal 1 (held-out accuracy): the validation records contain a guaranteed share of
 ## Edge cases
 | Case | Expected behaviour | Decided by |
 |------|--------------------|-----------|
-| No keep fragment in `test` (first run) | records as today; one warning line | maintainer, 2026-10-16 |
+| No keep fragment in `test` (first run) | records as today; one warning line per generated record (the generator is called once per record) | maintainer, 2026-10-16 |
 | Keep fragments only in some labels | quota capped by the slots those labels can fill; warning with the shortfall | maintainer (use all, warn) |
 | Fewer keep fragments than slots of a label | picked with replacement, as every other pick today | assumption |
 | 30% of a record's fragment count is not whole | rounded up | assumption |
