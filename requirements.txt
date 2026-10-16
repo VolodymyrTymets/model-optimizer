@@ -47,6 +47,7 @@ Pygments==2.20.0
 pyloudnorm==0.2.0
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
+python-dotenv==1.2.1
 requests==2.32.5
 rich==15.0.0
 scikit-learn==1.6.1
