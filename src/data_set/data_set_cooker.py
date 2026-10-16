@@ -2,7 +2,7 @@ import shutil
 from os.path import join, exists, getmtime
 
 from src.assets_service.assets_service import AssetsService
-from src.data_set.utils.data_set_filter import FILTERED_MARKER
+from src.data_set.utils.data_set_filter import DataSetFilter, FILTERED_MARKER
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
@@ -29,10 +29,24 @@ class DataSetCooker:
                                                                 sub_sets=sub_sets, labels=labels)
         self.logger = Logger('DataSet')
         self._datasets_path = datasets_path
+        self._af_strategy = af_strategy
 
     def _is_filtered(self) -> bool:
-        # the marker is written by filter-data-set.py once a model has filtered this data set
+        # the marker is written once a model has filtered this data set (by _filter_data_set or filter-data-set.py)
         return exists(join(self._datasets_path, FILTERED_MARKER))
+
+    def _filter_data_set(self, duration: float) -> bool:
+        if EMULATE_MODE:
+            return False
+        # only export-best-model.py writes this folder, so a first run finds none and stays unfiltered
+        models_path, model_name = self._asset_service.get_models_path()
+        if not exists(join(models_path, model_name)):
+            self.logger.log('No exported model for this data set. Skipping filter', color='yellow')
+            return False
+        data_set_filter = DataSetFilter(in_path=self._datasets_path, out_path=self._datasets_path,
+                                        sub_sets=sub_sets, labels=labels, assets_service=self._asset_service,
+                                        af_strategy=self._af_strategy, model_name=model_name)
+        return data_set_filter.filter(duration=duration)
 
     def _records_outdated(self) -> bool:
         # the filter moved fragments of the test set, so records generated before it describe the old test set
@@ -84,6 +98,7 @@ class DataSetCooker:
         else:
             self.remove_data_set()
             self._split_data_set(duration)
+            self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
         self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT,
                                is_need_to_regenerate=self._records_outdated())

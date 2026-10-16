@@ -85,6 +85,47 @@ settled decision "filtering is a manual step between two runs" (rule E1).
 | R-3: records are regenerated from a changed `test` set, and validation records are shared by all experiments | a later experiment is validated on different records than an earlier one | explicit in the RUNBOOK; AC4 limits regeneration to once per filtering |
 | R-4: the full pipeline cannot run here (Postgres, recordings, training) | the wiring in `ExperimentStep` is verified by import and grep only | listed under "Not verified" in the PR |
 
+## Revision 1 (2026-10-16): filter inside the pipeline, after cooking
+<!-- A human writes this line to approve the revision. -->
+Revision-approved-by: volodymyr · 2026-10-16
+
+Pattern followed: the removed `DataSetCooker._filter_data_set` (early returns with a `Logger('DataSet')` line) and
+`DataSetFilter` + `LocalModelLoader` from ticket 2, unchanged. ADR-007 is superseded by ADR-008.
+
+### R5 — Filter once after cooking (M)
+- files: `src/data_set/data_set_cooker.py` (change: `_filter_data_set(duration)`: `EMULATE_MODE` -> `False`; model name
+  = `self._asset_service.get_models_path()[1]`; folder absent -> log "No exported model for this data set. Skipping
+  filter" and `False`; else build `DataSetFilter(in_path=out_path=datasets_path, sub_sets, labels, assets_service,
+  af_strategy, model_name)` and return its `filter(duration)`; `prepare()` order: keep or re-split, `_filter_data_set`,
+  `_argument_data_set`, `_generate_records(is_need_to_regenerate=self._records_outdated())`; `_filter_data_set` is
+  skipped when `_is_filtered()` so a manually marked data set is not filtered twice; the `af_strategy` constructor
+  argument is used again and stored)
+- layer: service (data_set)
+- test: none exists in `src/` (rule P6); verified by run
+- executed how: same harness as R1 (scratch cwd, `MODEL_OPTIMIZER_TASK=sound`, `get_data_set_details` patched, abspath
+  asserts), plus `ExperimentDataSetDetails` and a tiny Keras model exported with `ModelExporter.export_model`
+  (labels as a numpy array) into `join(*asset_service.get_models_path())`, exactly where `ModelRestorer.restore_step`
+  writes it (the grid itself never writes there, so the harness mirrors `export-best-model.py`). Runs: (f) no model folder -> AC8; (g) model
+  present, unmarked -> ground truth per fragment from `ModelResultParser` computed first, then `prepare([nothing,
+  time_shift])`: each fragment under its predicted label, `keep` files untouched, marker exists, `time_shift` files in
+  train only, records mtime newer than the marker (AC9, AC11); (h) `prepare()` again: nothing moves (AC10); (i) model
+  folder present but exported for another duration (patch `DURATION` in the model settings by exporting with a
+  different one): raises, nothing moved, no marker (AC12). Log grep: the counts from the filter appear.
+- risk: the model exists only after the maintainer runs `export-best-model.py`, so a plain grid run never filters;
+  see R-5
+
+### R6 — Docs and ADR (S)
+- files: `docs/decisions/ADR-008-filter-with-the-exported-model.md` (new; marks ADR-007 superseded),
+  `docs/decisions/ADR-007-filtering-is-a-manual-step.md` (status line), `docs/ARCHITECTURE.md` (flow 1, flow 4, the
+  landmine on records), `docs/RUNBOOK.md` (replace the two-run procedure: `main.py`, `export-best-model.py`, `main.py`), `docs/features/4/spec.md` (tick AC8-AC12)
+
+### Revision risks
+| Risk | Impact | Cheapest way to find out early |
+|------|--------|-------------------------------|
+| R-5: the grid never writes `assets/models/model-<fingerprint>`; only `export-best-model.py` does, so the maintainer must run it between the two runs (chosen over a DB lookup of the best finished experiment) | a plain `main.py` never filters | ADR-008 and RUNBOOK say so; the cooker logs "No exported model for this data set. Skipping filter" |
+| R-6: a marked data set is kept and never filtered again, so filtering happens once per data-set folder; the folder name has no feature type, so the first feature type's model filters it for all later ones; an unmarked data set is re-split at random just before filtering, so the model was trained on a different split and has seen some of the new `test` fragments | optimistic labels on `test`, goal 1; records regenerate once per filtering (shared, random) | stated in ADR-008; `filter-data-set.py --dry-run` remains for a manual look |
+| R-7: a failing filter (unreadable model) stops the whole experiment run | an interrupted grid | by design (AC12); the error names the model folder |
+
 ## Assumptions
 - Branch `feat/4-adjust-filtering` from `main` (which already contains ticket 2), created at the start of `/implement`.
 - Python 3.9 `.venv`, no new dependency (rule C2). Complexity: M, S, S, S.

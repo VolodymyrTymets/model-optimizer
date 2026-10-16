@@ -63,3 +63,35 @@ instead of a noisy per-step one. Goal 2: the unfiltered run and the filtered run
 | 1 | How to start the second run | different settings or clearing the finished row, no code (answered by the maintainer) | answered |
 | 2 | Augment on the first (unfiltered) run? | No: today it is skipped for the same reason (augmenting mislabeled data), so nothing changes | no |
 | 3 | `DataSetCooker(af_strategy=...)` parameter becomes unused | kept, so four callers stay untouched | no |
+
+## Revision 1 (2026-10-16, maintainer feedback on PR #14)
+Running `main.py` showed `Data set is not filtered. Skipping argumentation` right after the data set was cooked. The
+maintainer wants the pipeline to filter by itself right after cooking, with no manual script step. This **reverses
+the out-of-scope line "adding filtering anywhere in `main.py`"** and ADR-007's "filtering is a manual step".
+Decided: the filter model is **auto-detected**, the model exported for this data set
+(`assets/models/model-<labels>-<duration>-<af_type>`, the name `AssetsService.get_models_path()` gives). Only
+`export-best-model.py` (`ModelRestorer`) writes it: a grid run exports each experiment's best step to
+`assets/experiment-<id>/model`, which this does not read (the maintainer chose this over a DB lookup of the best
+finished experiment, 2026-10-16). So the flow is: `main.py` (no model yet: no filtering), `export-best-model.py`,
+`main.py` again (filters automatically). If the model does not exist, filtering is skipped.
+
+Changed behaviour of `DataSetCooker.prepare()`: cook (or keep a marked data set) -> filter once with the exported
+model if it exists and the data set is not marked -> augment if marked -> regenerate records if older than the marker.
+This happens once per experiment, never per step. `filter-data-set.py` stays for manual use.
+
+- [ ] AC8 Given no exported model for this data set (first run), then `prepare()` filters nothing, writes no marker and
+  does not augment; the log says why.
+- [ ] AC9 Given an exported model and an unmarked data set, then after `prepare()` every fragment (except `keep`
+  and augmented ones) is under the label that model predicts, the marker exists, and augmentation is applied.
+- [ ] AC10 Given a marked data set (manual script run), then it is not filtered again.
+- [ ] AC11 Given the data set was filtered, then the validation records are regenerated (they are older than the new marker).
+- [ ] AC12 A model that cannot be loaded, whose settings cannot be read, or whose duration does not match raises; it
+  never filters with a default strategy (rule D5). The feature type comes from the model name, which is built from
+  the experiment's own feature type, so no separate mismatch case exists.
+- AC1 is amended: an unmarked data set is re-split, then filtered if a model exists (AC8 and AC9), instead of never.
+
+Edge cases: `export-best-model.py` overwrites `assets/models/model-<fingerprint>` with the best step of the whole
+database. The data-set folder name has no feature type, so once a data set is filtered, later feature types in the same
+grid reuse it as it is (the first feature type's model did the filtering).
+`EMULATE_MODE` skips filtering as it skips augmentation. Filtering moves `train` and `test` fragments (decision of
+2026-10-16 for ticket 2), so the shared validation records change after each filtering (known cost, ADR-007).
