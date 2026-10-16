@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Optional
 
 import tensorflow as tf
@@ -111,7 +112,7 @@ class InMemoryModelLoader:
 class DataSetFilter(DataSetFileWorker):
     def __init__(self, in_path: str, out_path: str, sub_sets: list[str], labels: list[str],
                  assets_service: IAssetsService, af_strategy: IAFStrategy, experiment_id: Optional[int] = None,
-                 localModel=False, model_name: Optional[str] = None):
+                 localModel=False, model_name: Optional[str] = None, dry_run: bool = False):
         super().__init__(in_path=in_path, out_path=out_path, sub_sets=sub_sets, labels=labels)
         self.assets_service = assets_service
         self.experiment_id = experiment_id
@@ -120,6 +121,7 @@ class DataSetFilter(DataSetFileWorker):
         self.logger = Logger('DataSetFilter')
         self.except_sets = []
         self.except_labels = []
+        self.dry_run = dry_run
         self.assets_service = assets_service
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self.model_loader = LocalModelLoader(af_strategy=self.af_strategy,
@@ -135,19 +137,29 @@ class DataSetFilter(DataSetFileWorker):
         self.logger.log('Finishing', color='blue')
         self.model_loader.finish(self.out_path)
 
+    def _check_folders_exist(self):
+        # read_data_set lists every <set>/<label> folder; a missing one would fail midway, after files were moved
+        for set_name in self.set_names:
+            for label in self.labels:
+                if not self.files.is_exist(self.files.join(self.in_path, set_name, str(label))):
+                    raise FileNotFoundError(f'Data set folder missing for set "{set_name}", label "{label}"')
+
     def filter(self, duration: float) -> bool:
         self.logger.log('Start filtering', color='blue')
         if self.model_loader.is_filtered(self.out_path):
             self.logger.log('Filtering already done. Skipping.', color='blue')
             return False
 
+        self._check_folders_exist()
         model, filter_af_strategy = self.model_loader.get_model(duration)
         if not model:
             self.logger.log('Model not found. Filtering skipped.', color='red')
             return False
         if filter_af_strategy is not None:
             self.model_parser = ModelResultParser(af_strategy=filter_af_strategy)
-        is_filtered = False
+        # only counts are logged: file names and paths under assets/ are recorded user data (rule G1)
+        moves = Counter()
+        planned = []
         for signal, sr, set_name, label, path, file in self.read_data_set(log=False, exclude_labels=self.except_labels, except_sets=self.except_sets):
             if keet_prefix in file:
                 continue
@@ -156,14 +168,25 @@ class DataSetFilter(DataSetFileWorker):
             if len(signal) >= FRAGMENT_LENGTH:
                 signal_label, _ = self.model_parser.parse(model=model, x=signal)
                 if label != signal_label:
+                    moves[(set_name, label, signal_label)] += 1
                     out_folder = self.files.join(self.out_path, set_name, signal_label)
-                    self.files.create_folder(out_folder)
-                    to_path = self.files.join(out_folder, file)
-                    from_path = self.files.join(path, file)
-                    self.logger.log(f'moving {from_path} to {to_path}', color='yellow')
-                    shutil.move(from_path, to_path)
-                    is_filtered = True
+                    planned.append((self.files.join(path, file), out_folder, self.files.join(out_folder, file)))
 
+        # decide everything before moving anything: shutil.move overwrites an existing file silently
+        targets = [to_path for _, _, to_path in planned]
+        clashes = len(targets) - len(set(targets)) + sum(1 for to_path in set(targets) if self.files.is_exist(to_path))
+        if clashes:
+            raise FileExistsError(f'{clashes} planned move(s) would overwrite an existing file; nothing was moved')
+        is_filtered = len(planned) > 0
+        if not self.dry_run:
+            for from_path, out_folder, to_path in planned:
+                self.files.create_folder(out_folder)
+                shutil.move(from_path, to_path)
+
+        for (set_name, from_label, to_label), count in sorted(moves.items()):
+            self.logger.log(f'{"would move" if self.dry_run else "moved"} {count} from {set_name}/{from_label} '
+                            f'to {set_name}/{to_label}', color='yellow')
         self.logger.log('End filtering', color='blue')
-        self.finish()
+        if not self.dry_run:
+            self.finish()
         return is_filtered
