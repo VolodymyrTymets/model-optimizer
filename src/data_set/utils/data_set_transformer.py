@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 import glob
 import numpy as np
 
@@ -39,6 +40,25 @@ class DataSetTransformer(DataSetFileWorker):
     normalize_fragments = self.transformer.normalize(signal)
     for normalize_index, n_fragment in enumerate(normalize_fragments):
       self.write_signal(n_fragment, sr, path, f'{ArgumentationTypes.normalization.value}_{normalize_index}')
+
+  def remove_argumentation(self, except_sets: Optional[list[str]] = None, except_labels: Optional[list[str]] = None) -> int:
+    # augmented files are the only ones named after an ArgumentationTypes value; base fragments are '_<uuid>.wav'
+    # or '<n>_keep_<uuid>.wav', so they are never matched
+    prefixes = tuple(x.value for x in ArgumentationTypes if x != ArgumentationTypes.nothing)
+    removed = 0
+    for set_name in self.set_names:
+      if except_sets and set_name in except_sets:
+        continue
+      for label in self.labels:
+        if except_labels and label in except_labels:
+          continue
+        path = self.files.join(self.out_path, set_name, str(label))
+        for file in self.files.get_only_files(path):
+          if file.startswith(prefixes):
+            self.files.remove(self.files.join(path, file))
+            removed += 1
+    self.logger.log(f'Removed {removed} argumented files', color='green')
+    return removed
 
   def argument(self, argumentation_types: list[ArgumentationTypes] = [], except_sets: list['str'] = [],
                except_labels: list[str] = []):

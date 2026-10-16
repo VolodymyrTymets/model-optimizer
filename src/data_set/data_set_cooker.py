@@ -1,8 +1,8 @@
 import shutil
-from os.path import join, exists
+from os.path import join, exists, getmtime
 
 from src.assets_service.assets_service import AssetsService
-from src.data_set.utils.data_set_filter import DataSetFilter
+from src.data_set.utils.data_set_filter import DataSetFilter, FILTERED_MARKER
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
@@ -34,6 +34,15 @@ class DataSetCooker:
         self.logger = Logger('DataSet')
         self._datasets_path = datasets_path
 
+    def _is_filtered(self) -> bool:
+        # the marker is written by filter-data-set.py once a model has filtered this data set
+        return exists(join(self._datasets_path, FILTERED_MARKER))
+
+    def _records_outdated(self) -> bool:
+        # the filter moved fragments of the test set, so records generated before it describe the old test set
+        records_path = self._asset_service.get_validation_records_path()
+        return self._is_filtered() and exists(records_path) and getmtime(join(self._datasets_path, FILTERED_MARKER)) > getmtime(records_path)
+
     def remove_data_set(self):
         if exists(self._datasets_path):
             shutil.rmtree(self._datasets_path)
@@ -49,9 +58,11 @@ class DataSetCooker:
     def _argument_data_set(self, argumentation_types: list[ArgumentationTypes]):
         if EMULATE_MODE:
             return False
-        if self.data_set_filter.is_filtered() is False:
+        if not self._is_filtered():
             self.logger.log(f'Data set is not filtered. Skipping argumentation', color='red')
             return False
+        # lists of types are cumulative per experiment and reset per feature type, so start from the base fragments
+        self.data_set_transformer.remove_argumentation(except_sets=['test'], except_labels=['noise'])
         self.logger.log(
             f'Transforming data set with argumentation types: {",".join([x.value for x in argumentation_types])}',
             color='blue')
@@ -89,8 +100,12 @@ class DataSetCooker:
         return is_filtered or is_argumeted
 
     def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
-        self.remove_data_set()
-        self._split_data_set(duration)
+        if self._is_filtered():
+            self.logger.log(f'Data set is filtered. Keeping it', color='green')
+        else:
+            self.remove_data_set()
+            self._split_data_set(duration)
         is_filtered = self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
-        self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT, is_need_to_regenerate=is_filtered)
+        self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT,
+                               is_need_to_regenerate=is_filtered or self._records_outdated())

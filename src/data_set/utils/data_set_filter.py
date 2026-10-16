@@ -20,6 +20,8 @@ from src.assets_service.assets_service_interface import IAssetsService
 from src.definitions import FRAGMENT_LENGTH, sr, frame_length, hop_length, keet_prefix
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 
+FILTERED_MARKER = '__filtered__'
+
 
 class LocalModelLoader:
     def __init__(self, af_strategy: IAFStrategy, assets_service: IAssetsService,
@@ -53,10 +55,10 @@ class LocalModelLoader:
         return model, self._get_af_strategy(model, duration)
 
     def is_filtered(self, db_path: str):
-        return self.files.is_exist(self.files.join(db_path, '__filtered__'))
+        return self.files.is_exist(self.files.join(db_path, FILTERED_MARKER))
 
     def finish(self, db_path: str):
-        self.files.create_folder(self.files.join(db_path, '__filtered__'))
+        self.files.create_folder(self.files.join(db_path, FILTERED_MARKER))
 
 
 class InMemoryModelLoader:
@@ -79,7 +81,7 @@ class InMemoryModelLoader:
         if best_step is None:
             self.logger.log('No best step found', color='red')
             return False
-        path = self.files.join(db_path, '__filtered__')
+        path = self.files.join(db_path, FILTERED_MARKER)
         if self.files.is_exist(path):
             if not self.files.is_exist(self.files.join(path, "accuracy.txt")):
                 self.logger.log(f'No accuracy file found for {db_path}', color='red')
@@ -91,7 +93,7 @@ class InMemoryModelLoader:
 
     def finish(self, db_path: str):
         best_step = self._get_best_step()
-        path = self.files.join(db_path, '__filtered__')
+        path = self.files.join(db_path, FILTERED_MARKER)
         self.files.create_folder(path)
         with open(self.files.join(path, "accuracy.txt"), "w", encoding="utf-8") as file:
             file.write(str(best_step.accuracy_delta) + "\n")
