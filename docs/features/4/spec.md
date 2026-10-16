@@ -79,13 +79,13 @@ Changed behaviour of `DataSetCooker.prepare()`: cook (or keep a marked data set)
 model if it exists and the data set is not marked -> augment if marked -> regenerate records if older than the marker.
 This happens once per experiment, never per step. `filter-data-set.py` stays for manual use.
 
-- [ ] AC8 Given no exported model for this data set (first run), then `prepare()` filters nothing, writes no marker and
+- [x] AC8 Given no exported model for this data set (first run), then `prepare()` filters nothing, writes no marker and
   does not augment; the log says why.
-- [ ] AC9 Given an exported model and an unmarked data set, then after `prepare()` every fragment (except `keep`
+- [x] AC9 Given an exported model and an unmarked data set, then after `prepare()` every fragment (except `keep`
   and augmented ones) is under the label that model predicts, the marker exists, and augmentation is applied.
-- [ ] AC10 Given a marked data set (manual script run), then it is not filtered again.
-- [ ] AC11 Given the data set was filtered, then the validation records are regenerated (they are older than the new marker).
-- [ ] AC12 A model that cannot be loaded, whose settings cannot be read, or whose duration does not match raises; it
+- [x] AC10 Given a marked data set (manual script run), then it is not filtered again.
+- [x] AC11 Given the data set was filtered, then the validation records are regenerated (they are older than the new marker).
+- [x] AC12 A model that cannot be loaded, whose settings cannot be read, or whose duration does not match raises; it
   never filters with a default strategy (rule D5). The feature type comes from the model name, which is built from
   the experiment's own feature type, so no separate mismatch case exists.
 - AC1 is amended: an unmarked data set is re-split, then filtered if a model exists (AC8 and AC9), instead of never.

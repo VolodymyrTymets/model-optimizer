@@ -1,7 +1,7 @@
 # ADR-007 — Filtering is a manual step between two runs
 
 - **Date:** 2026-10-16
-- **Status:** accepted
+- **Status:** superseded by ADR-008 (filtering now also runs inside `prepare()` when an exported model exists)
 - **Deciders:** maintainer (volodymyr)
 - **Ticket:** 4
 
