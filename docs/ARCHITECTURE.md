@@ -23,6 +23,8 @@
 | `src/assets_service` | Resolves every path under `assets/` (data set, experiment, models, validation records) | no | maintainer |
 | `assets/` | **Git-ignored**, 1.6 GB: raw/cooked data sets, per-experiment output, exported models | no | local only |
 | `requirements.txt`, `requirements-gpu.txt` | Pinned deps; the GPU file adds `tensorflow-metal` (Apple) | no | maintainer |
+| `requirements-dev.txt` | Pinned dev-only tools (`pytest` and its dependencies); installed on top of either runtime file (ADR-004) | no | maintainer |
+| `tests/`, `pytest.ini` | pytest suite on synthetic data (today: the validation-record generator) and its config; `tests/conftest.py` pins `MODEL_OPTIMIZER_TASK=sound` | no | maintainer |
 
 ## Where data truth lives
 - **Experiment history** (experiments, details, data-set details, steps, model schemas, layers): Postgres, via `src/database/schema.py`. Authoritative for "which run is best".
@@ -71,4 +73,5 @@ Create/lookup experiment → cook data set → import train/val/test → build f
 - Augmentation is live again on a filtered data set and lives in the shared `data_set_<fingerprint>` folder: `export-best-model.py` (`ModelRestorer`) retrains the best step on whatever augmentation the last `prepare()` left there, and `train-rare-model.py` (`[nothing]`) strips it. Augmented copies sit next to their base fragment, so the importer's random train/validation split can put a copy in validation and its base fragment in train (validation accuracy looks better than it is; record accuracy is unaffected). Neither is fixed here (rule B4).
 - `assets/validation-records` is shared by every data set and task, while the `__filtered__` marker belongs to one data set: `_records_outdated()` is only right when one data set owns the records. Switching task (or data set) after filtering another one can leave records built from the other task's `test` set.
 - Python 3.9 + `numpy 2.0.2` + `tensorflow 2.20` + `keras 3.10` are pinned together; bumping any one is its own PR.
+- Validation records (`DataSetRecordGenerator`) hold at least `KEEP_RECORDS_SHARE` (30%) keep-flagged fragments of the `test` set in every record, spread over its segments; with fewer than that the generator uses all it has and logs the shortfall (one line per record, counts only). Existing `assets/validation-records` follow the rule only after the next filtering (`_records_outdated()`) or after the maintainer deletes the folder. `record_acc` recorded before and after this change measures different record mixes: compare only experiments run after it.
 - Typo'd module names are real import paths (`mode_trainer`, `mode_builder`, `mode_validator_interfcace`, `expirement_summarize_service`); do not "fix" them in a feature PR (rule C1).

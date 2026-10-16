@@ -8,7 +8,7 @@ paths:
 
 # Testing rules
 
-This repo has **no automated test suite yet** (`unit tests: none` in the command map). Until one exists:
+This repo has a small pytest suite in `tests/` (it covers only the validation-record generator so far; run it with the `unit tests` command in the command map). For code without tests:
 
 1. A change is verified by running the affected entry script or service on a small local data set and reporting the real output (rule B1, B2). Anything that needs GPU, Postgres or the full `assets/` data goes under "Not verified".
 2. When you add the first tests, use pytest as `testing-python.md` describes, put them in `tests/`, and add the command to the command map in `CLAUDE.md` in the same PR (rule T1).

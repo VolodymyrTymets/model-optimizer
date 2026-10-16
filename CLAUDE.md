@@ -8,10 +8,10 @@ to `.claude/rules/`, `docs/`, or a skill and leave a pointer.
 
 | Task | Command |
 |------|---------|
-| install | `.venv/bin/pip install -r requirements.txt` |
+| install | `.venv/bin/pip install -r requirements.txt -r requirements-dev.txt` |
 | lint | `none` |
-| unit tests | `none` |
-| affected tests | `none` |
+| unit tests | `.venv/bin/python -m pytest` |
+| affected tests | `.venv/bin/python -m pytest tests/<test_file>.py` |
 | build | `none` |
 | dev server | `.venv/bin/python main.py` |
 | e2e | `none` |
@@ -105,4 +105,4 @@ Dependency manager: **pip (pinned requirements.txt, inside .venv)**. Runtime pin
 - **P3** Services log through `Logger('<Module>')` (`src/utils/logger`), not bare `print` or `logging`. This is the repo convention and outranks python-core rule 3 (rule D2). Entry scripts (`main.py`, `train-rare-model.py`) may still print results.
 - **P4** Database access goes only through `DBClient.session_scope()` (`src/database/db_client.py`); the schema is `src/database/schema.py` and tables come from `create_all` (no migration tool). A schema change needs an ADR and a note on existing rows.
 - **P5** `assets/` (1.6 GB of recorded EMG/audio and MRI data, git-ignored) is sensitive: never read, list in bulk, paste or modify it (rule G1). Reason about paths via `src/assets_service`, never by opening the data.
-- **P6** Nothing in `src/` has automated tests yet. A change is verified by running the relevant entry script against a small local data set and reporting the output (rule B1); say under "Not verified" what could not run (GPU, Postgres, data).
+- **P6** Only `src/data_set/utils/data_set_record_generator.py` has automated tests so far (`tests/`). Other changes are verified by running the relevant entry script against a small local data set and reporting the output (rule B1); say under "Not verified" what could not run (GPU, Postgres, data).
