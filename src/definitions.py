@@ -1,36 +1,36 @@
 # Default local store for experiment-progress logging.
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer-emg"
+DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/model-optimizer-sound"
 
 ASSETS_PATH = 'assets'
-DATA_SET_NAME = 'data_set_emg'
+DATA_SET_NAME = 'data_set_sound'
 VERBOSE = True
 EMULATE_MODE = False
 SKIP_FILTER = True
-VALIDATION_RECORDS_COUNT = 10
+VALIDATION_RECORDS_COUNT = 40
 # Sound configs for sr, Duration
-# sr = 44100
-# DURATION = 0.5
+sr = 44100
+DURATION = 0.5
 #EMG configs for sr, Duration
-sr = 8820
-DURATION = 0.05
+# sr = 8820
+# DURATION = 0.05
 FRAGMENT_LENGTH = int(sr / (1 / DURATION))
 frame_length = 512
 hop_length = frame_length // 4
 n_mels = 64
 n_mfcc = 64
 # Sound
-# labels = ['noise', 'stimulation', 'breath']
-# labels_colors = {
-#     'noise': 'blue',
-#     'stimulation': 'red',
-#     'breath': 'green'
-# }
-# EMG
-labels = ['noise', 'stimulation']
+labels = ['noise', 'stimulation', 'breath']
 labels_colors = {
     'noise': 'blue',
     'stimulation': 'red',
+    'breath': 'green'
 }
+# EMG
+# labels = ['noise', 'stimulation']
+# labels_colors = {
+#     'noise': 'blue',
+#     'stimulation': 'red',
+# }
 #EMG - hand
 # labels = ['noise', 'WristExtension', 'WristFlexion'] #'Supination', 'Rest', 'Pronation', 'HandOpen', 'HandClose']
 # labels_colors = {
