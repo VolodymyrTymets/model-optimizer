@@ -62,9 +62,9 @@ Pattern followed: `export-best-model.py` (thin entry script calling one service)
   generated from sine tones; the tiny model from R1 is untrained, so the check compares the actual moves with the
   model's own predictions (`ModelResultParser.parse`) per fragment. Runs: (0) a tree with one `<set>/<label>` folder
   missing: the error names set and label, listing before and after identical (nothing moved); (a) dry run on a full
-  tree: listing (paths, sizes, mtimes) identical before and after, no marker, log shows counts (AC4, AC7); (b) real run: each mismatching fragment moved to its predicted
+  tree: listing (paths, sizes, mtimes) identical before and after, no marker, log lists the planned moves (AC4, AC7); (b) real run: each mismatching fragment moved to its predicted
   label, `keep_*.wav` and `time_shift_*.wav` fixtures untouched (AC3), marker present; (c) second run exits with
-  the "already filtered" line (AC5). Log grep shows no `.wav` name (AC7).
+  the "already filtered" line (AC5). Log shows each move with its file name (AC7, changed from counts only at the maintainer's request).
 - risk: AC8 is verified by reasoning, not by a run: `SKIP_FILTER = True` makes `DataSetCooker._filter_data_set`
   return before `filter()`. The in-memory path (needs Postgres + an experiment) goes under "Not verified" in the PR
 

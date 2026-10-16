@@ -24,7 +24,7 @@ See the command map in `CLAUDE.md` — that is the canonical list. The repo has 
 - Changing `labels` or `DURATION` points the pipeline at a different `assets/data_set_*` folder; the old one is not deleted.
 - Tables are created on `Experiments()` construction (`create_all`); there are no migrations, so a schema change needs a manual DB reset or `ALTER`.
 
-- Filtering (`filter-data-set.py`): run it with `--dry-run` first, it logs counts per set and label and moves nothing. The real run moves files in place with no undo, on `train` and `test` (so validation records inherit the model's labels), and writes `__filtered__`; a second run is skipped while that marker exists. The cooked data set must exist (run `main.py` once) and the next `main.py` run re-splits it, discarding the filtering.
+- Filtering (`filter-data-set.py`): run it with `--dry-run` first, it logs every file it would move (name, from and to label) plus counts, and moves nothing. That output is recorded data: keep it out of prompts, issues and PRs. The real run moves files in place with no undo, on `train` and `test` (so validation records inherit the model's labels), and writes `__filtered__`; a second run is skipped while that marker exists. The cooked data set must exist (run `main.py` once) and the next `main.py` run re-splits it, discarding the filtering.
 
 ## Common failures
 | Symptom | Cause | Fix |

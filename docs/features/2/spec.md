@@ -36,11 +36,11 @@ Prerequisite for ticket 4 (remove per-step filtering from `main.py`).
   `ValueError` naming both values before any file is moved.
 - [x] AC3 Given a fragment whose predicted label differs from its folder, then it is moved to the predicted label's
   folder; files with `keep` in the name and augmented files are never moved.
-- [x] AC4 Given `--dry-run`, then nothing is moved and no `__filtered__` marker is written; the log shows counts.
+- [x] AC4 Given `--dry-run`, then nothing is moved and no `__filtered__` marker is written; the log lists what would move.
 - [x] AC5 Given the data set is already marked `__filtered__`, then the script logs and exits without moving.
 - [x] AC6 Given the model cannot be loaded or its settings cannot be read, then it raises; it never filters with a
   default feature strategy (rule D5).
-- [x] AC7 Logs carry counts per (set, from-label, to-label) only, never file names or paths under `assets/` (rule G1).
+- [x] AC7 The log lists every move as `<set>/<label>/<file> -> <set>/<new label>` plus counts per (set, from-label, to-label). Changed on 2026-10-16 at the maintainer's request (was counts only). The output stays on the maintainer's terminal; it must not be pasted into prompts, issues or PRs (rule G1).
 - [x] AC9 Given a `<set>/<label>` folder is missing, then the script raises naming both and moves nothing.
 - [x] AC10 Given a planned move would overwrite an existing file, then it raises `FileExistsError` and nothing is moved.
 - [x] AC8 `main.py` is unaffected while `SKIP_FILTER = True`: it never reaches `filter()`. With the flag off, the in-memory loader runs the shared `filter()` changes (folder pre-check, collision guard, count-only logs). Checked by reasoning only, not run (needs Postgres and an experiment).

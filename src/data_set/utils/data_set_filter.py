@@ -161,7 +161,6 @@ class DataSetFilter(DataSetFileWorker):
             return False
         if filter_af_strategy is not None:
             self.model_parser = ModelResultParser(af_strategy=filter_af_strategy)
-        # only counts are logged: file names and paths under assets/ are recorded user data (rule G1)
         moves = Counter()
         planned = []
         for signal, sr, set_name, label, path, file in self.read_data_set(log=False, exclude_labels=self.except_labels, except_sets=self.except_sets):
@@ -174,21 +173,25 @@ class DataSetFilter(DataSetFileWorker):
                 if label != signal_label:
                     moves[(set_name, label, signal_label)] += 1
                     out_folder = self.files.join(self.out_path, set_name, signal_label)
-                    planned.append((self.files.join(path, file), out_folder, self.files.join(out_folder, file)))
+                    planned.append((self.files.join(path, file), out_folder, self.files.join(out_folder, file),
+                                    f'{set_name}/{label}/{file} -> {set_name}/{signal_label}'))
 
         # decide everything before moving anything: shutil.move overwrites an existing file silently
-        targets = [to_path for _, _, to_path in planned]
+        targets = [to_path for _, _, to_path, _ in planned]
         clashes = len(targets) - len(set(targets)) + sum(1 for to_path in set(targets) if self.files.is_exist(to_path))
         if clashes:
             raise FileExistsError(f'{clashes} planned move(s) would overwrite an existing file; nothing was moved')
         is_filtered = len(planned) > 0
+        verb = 'would move' if self.dry_run else 'moving'
+        for *_, description in planned:
+            self.logger.log(f'{verb} {description}', color='yellow')
         for (set_name, from_label, to_label), count in sorted(moves.items()):
-            self.logger.log(f'{"would move" if self.dry_run else "moving"} {count} from {set_name}/{from_label} '
+            self.logger.log(f'{verb} {count} from {set_name}/{from_label} '
                             f'to {set_name}/{to_label}', color='yellow')
         if not self.dry_run:
             done = 0
             try:
-                for from_path, out_folder, to_path in planned:
+                for from_path, out_folder, to_path, _ in planned:
                     self.files.create_folder(out_folder)
                     shutil.move(from_path, to_path)
                     done += 1

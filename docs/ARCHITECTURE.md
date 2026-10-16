@@ -55,7 +55,7 @@ Create/lookup experiment → cook data set → import train/val/test → build f
 `ModelRestorer.restore_best_step()` picks the best step from the DB and restores it.
 
 ### 4. Filter by model (`filter-data-set.py <model_name>`)
-`<model_name>` is a folder under `assets/models/` (`model-<labels>-<duration>-<af_type>`). `AssetsService.parse_model_name` / `get_data_set_path_for_model` map it to `assets/<DATA_SET_NAME>_<labels>-<duration>` (no DB) → the script checks labels and duration against `src/definitions.py` → `LocalModelLoader` loads the SavedModel → `DataSetFilter` plans every move, refuses if any would overwrite a file, then moves fragments in place on `train` and `test` and writes `__filtered__`. files with `keep` in the name and augmented files are skipped. Logs carry counts only.
+`<model_name>` is a folder under `assets/models/` (`model-<labels>-<duration>-<af_type>`). `AssetsService.parse_model_name` / `get_data_set_path_for_model` map it to `assets/<DATA_SET_NAME>_<labels>-<duration>` (no DB) → the script checks labels and duration against `src/definitions.py` → `LocalModelLoader` loads the SavedModel → `DataSetFilter` plans every move, refuses if any would overwrite a file, then moves fragments in place on `train` and `test` and writes `__filtered__`. files with `keep` in the name and augmented files are skipped. The log lists each move (`set/label/file -> set/new label`) and counts; keep that output out of prompts, issues and PRs (rule G1).
 
 ## External integrations
 | Service | Purpose | Failure mode | Sandbox available? |
