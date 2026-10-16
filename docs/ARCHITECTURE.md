@@ -46,7 +46,7 @@ The exported model is consumed by an external device/app that is **not in this r
 
 ## Key flows
 ### 1. Grid experiment (`main.py`)
-`Experiments()` creates tables → for each `AFTypes` x `ArgumentationTypes`: build `ExperimentDataSetDetails` + feature strategy → skip if the experiment is already finished → `DataSetCooker.prepare` (augment/split/features into `assets/data_set_*`) → `DataSetImporter` → `Experiment.start()` runs tuner steps, trains, records results in Postgres → `finish()`.
+`Experiments()` creates tables → for each `AFTypes` x `ArgumentationTypes`: build `ExperimentDataSetDetails` + feature strategy → skip if the experiment is already finished → `DataSetCooker.prepare` (no `__filtered__` marker: delete and re-split `assets/data_set_*`, no augmentation; marker present: keep the data set, remove old augmented files, augment again, regenerate validation records if they are older than the marker) → `DataSetImporter` → `Experiment.start()` runs tuner steps, trains, records results in Postgres → `finish()`. The pipeline never filters: filtering is the manual step of flow 4 between two runs (ADR-007).
 
 ### 2. Single rare model (`train-rare-model.py`)
 Create/lookup experiment → cook data set → import train/val/test → build fixed Conv2D model → fit with early stopping → export model plot + training plot → `ModeValidator.validate` on `assets/validation-records` → `ModelRecordLabeler` writes labelable records.
@@ -67,6 +67,6 @@ Create/lookup experiment → cook data set → import train/val/test → build f
 - `MODEL_OPTIMIZER_TASK` unset means `sound`: forgetting it on an EMG run silently uses the sound database and `data_set_sound`. An unknown value raises `ValueError` at import.
 - `assets/` fingerprints do not include the model settings; an old cooked data set is reused if labels + duration match.
 - `train-rare-model.py:63` uses `input_shape`, which is not defined anywhere in the file: `build_model` raises `NameError` as written.
-- Filtering by model moves files in place and the script cannot undo it. `DataSetCooker.prepare()` deletes and re-splits the cooked data set at the start of every `main.py` run, so a filtered result lasts only until the next run (ticket 4 deals with this). `test` is filtered too, so validation records, built from `test`, carry the filter model's labels: this can inflate held-out accuracy.
+- Filtering by model moves files in place and the script cannot undo it. `DataSetCooker.prepare()` keeps a data set that carries `__filtered__`, so a filtered data set lives until the maintainer deletes its folder (changed raw recordings are not picked up); an unfiltered one is deleted and re-split at the start of every experiment. `test` is filtered too, so validation records, built from `test`, carry the filter model's labels: this can inflate held-out accuracy.
 - Python 3.9 + `numpy 2.0.2` + `tensorflow 2.20` + `keras 3.10` are pinned together; bumping any one is its own PR.
 - Typo'd module names are real import paths (`mode_trainer`, `mode_builder`, `mode_validator_interfcace`, `expirement_summarize_service`); do not "fix" them in a feature PR (rule C1).

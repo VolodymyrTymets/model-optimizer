@@ -33,20 +33,20 @@ instead of a noisy per-step one. Goal 2: the unfiltered run and the filtered run
   - changes to `filter-data-set.py` behaviour; any `assets/` access during development (rule P5)
 
 ## Acceptance criteria
-- [ ] AC1 Given a data set without `__filtered__`, when `DataSetCooker.prepare()` runs, then it removes and re-splits
+- [x] AC1 Given a data set without `__filtered__`, when `DataSetCooker.prepare()` runs, then it removes and re-splits
   it as today and does not augment it.
-- [ ] AC2 Given a data set with `__filtered__`, when `prepare()` runs, then no file of it is removed or rewritten by
+- [x] AC2 Given a data set with `__filtered__`, when `prepare()` runs, then no file of it is removed or rewritten by
   the split and the marker stays.
-- [ ] AC3 Given a filtered data set, then after `prepare()` its augmented files are exactly the requested types, each
+- [x] AC3 Given a filtered data set, then after `prepare()` its augmented files are exactly the requested types, each
   applied once: earlier augmented files are removed first (base fragments are never touched), so a run with
   `[normalization]`, then `[normalization, time_stretch]`, then `[pitch_shift]` leaves only that list's types, and
   repeating a call leaves the file count unchanged.
-- [ ] AC4 Given a filtered data set newer than the validation records, then the records are regenerated; given
+- [x] AC4 Given a filtered data set newer than the validation records, then the records are regenerated; given
   records newer than the marker, they are kept.
-- [ ] AC5 No path of `main.py` filters: no reference to `step_prepare`, `SKIP_FILTER`, `InMemoryModelLoader` or
+- [x] AC5 No path of `main.py` filters: no reference to `step_prepare`, `SKIP_FILTER`, `InMemoryModelLoader` or
   `localModel` remains in `src/` or the entry scripts.
-- [ ] AC6 `filter-data-set.py` still works (dry run and real run on a synthetic data set).
-- [ ] AC7 `ExperimentStep.run` no longer touches the data set on disk before importing it.
+- [x] AC6 `filter-data-set.py` still works (dry run and real run on a synthetic data set).
+- [x] AC7 `ExperimentStep.run` no longer touches the data set on disk before importing it.
 
 ## Edge cases
 | Case | Expected behaviour | Decided by |
