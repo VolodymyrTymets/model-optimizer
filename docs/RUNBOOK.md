@@ -26,7 +26,7 @@ See the command map in `CLAUDE.md` — that is the canonical list. The repo has 
 ## Common failures
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `OperationalError: connection refused` at start | Postgres not running or DB missing | start Postgres, create `model-optimizer-emg` |
+| `OperationalError: connection refused` at start | Postgres not running or DB missing | start Postgres, create the database of the active task (`model-optimizer-sound` or `model-optimizer-emg`, see `src/definitions_<task>.py`) |
 | Experiment skipped silently | `experiment.is_finished()` is true for the same settings | change settings or clear that experiment row |
 | `ValueError: MODEL_OPTIMIZER_TASK='…' is not valid` at import | typo in the shell or `.env` value | use `sound` or `emg` |
 | Wrong data set or database used | variable not set, so the default `sound` applied | set `MODEL_OPTIMIZER_TASK` in the shell or `.env` |
