@@ -28,7 +28,8 @@ re-split as before and not augmented, because augmenting mislabeled fragments mu
 ## Consequences
 - Positive: one filtering path, chosen model named on the command line; the unfiltered and the filtered run are separate, visible runs.
 - Accepted cost: a filtered data set stays until its folder is deleted; the shared validation records change after filtering, so later experiments are validated on different records than earlier ones.
-- Follow-ups: ticket 3 changes record generation (keep flag, 30 % rule).
+- Accepted cost: the unfiltered run is recorded with the augmentation types it was asked for although none was applied, so run 1 should use `[nothing]` only; augmentation shares one folder, so `export-best-model.py` retrains on the last augmentation left there; augmented copies can leak into the validation split.
+- Follow-ups: ticket 3 changes record generation (keep flag, 30 % rule) and should keep records per data set; separate tickets for the restorer and the validation-split leak.
 
 ## Revisit when
 Identical settings must be run twice with both results kept in Postgres.

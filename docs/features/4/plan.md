@@ -75,7 +75,7 @@ settled decision "filtering is a manual step between two runs" (rule E1).
 - executed how: re-read the changed lines against the code
 
 ## Docs to update in this PR
-- [ ] spec.md · [ ] ARCHITECTURE.md · [ ] RUNBOOK.md · [ ] ADR-007 · glossary: no new term
+- [x] spec.md · [x] ARCHITECTURE.md · [x] RUNBOOK.md · [x] ADR-007 · [x] glossary (augmentation wording)
 
 ## Risks
 | Risk | Impact | Cheapest way to find out early |

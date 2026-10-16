@@ -52,7 +52,7 @@ instead of a noisy per-step one. Goal 2: the unfiltered run and the filtered run
 | Case | Expected behaviour | Decided by |
 |------|--------------------|-----------|
 | Filtered data set exists but raw recordings or labels changed | labels/duration change the folder name, so a new one is cooked; changed raw recordings need the maintainer to delete the filtered folder (documented) | assumption |
-| `EMULATE_MODE` is on | `prepare()` behaves as today (augment and records are skipped) | code |
+| `EMULATE_MODE` is on | augmentation and records are skipped as today; a filtered data set is kept instead of re-split | code |
 | Validation records folder missing | generated, as today | code |
 | Augmentation list differs between experiments on the same filtered data set (lists are cumulative and reset per feature type) | augmented files of the previous list are removed (recognised by a name starting with an `ArgumentationTypes` value), then the requested ones are made | analyze gate (goal 2: recorded settings must describe the data) |
 | Second run with identical settings | skipped by `Experiments.run` (`is_finished()`); the maintainer changes settings or clears the row | maintainer |
