@@ -29,7 +29,7 @@ the run stops (rule D5).
 
 ## Consequences
 - Positive: one pipeline path; the filter model is a visible, named folder; `filter-data-set.py` stays for a dry run or a manual pass.
-- Accepted cost: a plain grid run never filters (the model appears only after `export-best-model.py`); the data-set folder name has no feature type, so the first feature type's model filters it for all later ones; the model was trained on an earlier split and has seen part of the new `test` set, which favours its own labels; the shared validation records are regenerated (randomly) after each filtering; a failing model stops the whole run.
+- Accepted cost: a plain grid run never filters (the model appears only after `export-best-model.py`); the model must match the experiment's feature type exactly (maintainer choice), so with the one exported model only that feature type filters, experiments for other feature types that precede it in the loop run unfiltered and record augmentation that was not applied, and run 2 should list the exported feature type first; `train-rare-model.py` opts out with `with_filter=False`; the model was trained on an earlier split and has seen part of the new `test` set, which favours its own labels; the shared validation records are regenerated (randomly) after each filtering; a failing model stops the whole run.
 - Follow-ups: ticket 3 (records per data set, keep flag); the restorer and validation-split issues listed in ADR-007.
 
 ## Revisit when

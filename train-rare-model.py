@@ -55,7 +55,7 @@ def preprocess_data():
     data_set_cooker = DataSetCooker(experiment_id=1, af_strategy=af_strategy)
     data_set_cooker.prepare(duration=DURATION, argumentation_types=[
         ArgumentationTypes.nothing,
-    ])
+    ], with_filter=False)
 
 
 def build_model(train_ds, val_ds, test_ds, label_names):

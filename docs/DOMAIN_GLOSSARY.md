@@ -7,7 +7,7 @@
 | Task (profile) | `MODEL_OPTIMIZER_TASK`, `TASK`, `src/definitions_<task>.py` | The signal type a run works on, `sound` or `emg`; fixes `sr`, `DURATION`, `labels`, data-set name and database | a data set, or an experiment |
 | Experiment | `Experiment`, `ExperimentModel` | One model-search run for a given data-set configuration and model settings; has steps and an end time | `Experiments` (the orchestrator that creates many) |
 | Experiment step | `ExperimentStep`, `ExperimentStepModel` | One candidate model configuration trained inside an experiment, with its metrics | an epoch |
-| Data set | `DataSetCooker`, `DataSetImporter`, `assets/data_set_*` | Cooked train/val/test fragments of `DURATION` seconds, labelled, with features applied, and augmentation applied only once it is filtered (ADR-007) | raw recordings |
+| Data set | `DataSetCooker`, `DataSetImporter`, `assets/data_set_*` | Cooked train/val/test fragments of `DURATION` seconds, labelled, with features applied, and augmentation applied only once it is filtered (ADR-008) | raw recordings |
 | Fragment | `FRAGMENT_LENGTH` | `sr * DURATION` samples: the unit a model classifies | a whole record |
 | Record | `validation-records`, `ModelRecordLabeler` | A full-length recording used for validation, scored per record (`record_acc`) | fragment |
 | Label | `labels` | A class name, e.g. `noise`, `stimulation` | audio feature type |

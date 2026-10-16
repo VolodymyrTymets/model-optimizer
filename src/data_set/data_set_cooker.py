@@ -92,13 +92,14 @@ class DataSetCooker:
             self.data_set_record_generator.generate_test_record(duration=duration, except_sets=['train'],
                                                                 except_labels=[])
 
-    def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
+    def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes], with_filter: bool = True):
         if self._is_filtered():
             self.logger.log(f'Data set is filtered. Keeping it', color='green')
         else:
             self.remove_data_set()
             self._split_data_set(duration)
-            self._filter_data_set(duration)
+            if with_filter:
+                self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
         self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT,
                                is_need_to_regenerate=self._records_outdated())

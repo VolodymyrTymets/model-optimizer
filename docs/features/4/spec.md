@@ -25,7 +25,7 @@ instead of a noisy per-step one. Goal 2: the unfiltered run and the filtered run
   records are regenerated once after the data set was filtered; per-step filtering and its flag are removed
   (`step_prepare`, `SKIP_FILTER`, `InMemoryModelLoader`, the `localModel` switch); docs and an ADR.
 - **out (explicit):**
-  - adding filtering anywhere in `main.py` / `Experiments` (ticket: "do not add it to pipeline")
+  - ~~adding filtering anywhere in `main.py` / `Experiments`~~ (reversed by Revision 1 below)
   - changing the experiment, tuner, trainer or validator logic; the schema, DB or `Experiment.is_finished()`
   - keep-flag handling and the 30 % rule in `DataSetRecordGenerator` (ticket 3)
   - a way to run identical settings twice: the maintainer starts the second run with different settings or by
@@ -43,7 +43,7 @@ instead of a noisy per-step one. Goal 2: the unfiltered run and the filtered run
   repeating a call leaves the file count unchanged.
 - [x] AC4 Given a filtered data set newer than the validation records, then the records are regenerated; given
   records newer than the marker, they are kept.
-- [x] AC5 No path of `main.py` filters: no reference to `step_prepare`, `SKIP_FILTER`, `InMemoryModelLoader` or
+- [x] AC5 (amended by Revision 1: no per-step filtering remains, `prepare()` filters once, see AC8-AC10) No reference to `step_prepare`, `SKIP_FILTER`, `InMemoryModelLoader` or
   `localModel` remains in `src/` or the entry scripts.
 - [x] AC6 `filter-data-set.py` still works (dry run and real run on a synthetic data set).
 - [x] AC7 `ExperimentStep.run` no longer touches the data set on disk before importing it.
@@ -77,7 +77,7 @@ finished experiment, 2026-10-16). So the flow is: `main.py` (no model yet: no fi
 
 Changed behaviour of `DataSetCooker.prepare()`: cook (or keep a marked data set) -> filter once with the exported
 model if it exists and the data set is not marked -> augment if marked -> regenerate records if older than the marker.
-This happens once per experiment, never per step. `filter-data-set.py` stays for manual use.
+It is tried for each experiment while the data set is unmarked, and succeeds at most once per data-set folder; never per step. `filter-data-set.py` stays for manual use.
 
 - [x] AC8 Given no exported model for this data set (first run), then `prepare()` filters nothing, writes no marker and
   does not augment; the log says why.
@@ -92,6 +92,10 @@ This happens once per experiment, never per step. `filter-data-set.py` stays for
 
 Edge cases: `export-best-model.py` overwrites `assets/models/model-<fingerprint>` with the best step of the whole
 database. The data-set folder name has no feature type, so once a data set is filtered, later feature types in the same
-grid reuse it as it is (the first feature type's model did the filtering).
+grid reuse it as it is. Only an experiment whose feature type equals the exported model's filters (maintainer choice,
+exact match); experiments for other feature types that come before it in the loop re-split an unfiltered data set,
+log `Skipping filter` / `Skipping argumentation`, and their rows still record the requested augmentation types, so
+run 2 should list the exported feature type first (or only it). `train-rare-model.py` passes `with_filter=False`
+and behaves as before.
 `EMULATE_MODE` skips filtering as it skips augmentation. Filtering moves `train` and `test` fragments (decision of
 2026-10-16 for ticket 2), so the shared validation records change after each filtering (known cost, ADR-007).
