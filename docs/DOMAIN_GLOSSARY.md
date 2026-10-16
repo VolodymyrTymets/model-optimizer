@@ -4,6 +4,7 @@
 
 | Term | Code identifier | Means exactly | Not to be confused with |
 |------|-----------------|---------------|-------------------------|
+| Task (profile) | `MODEL_OPTIMIZER_TASK`, `TASK`, `src/definitions_<task>.py` | The signal type a run works on, `sound` or `emg`; fixes `sr`, `DURATION`, `labels`, data-set name and database | a data set, or an experiment |
 | Experiment | `Experiment`, `ExperimentModel` | One model-search run for a given data-set configuration and model settings; has steps and an end time | `Experiments` (the orchestrator that creates many) |
 | Experiment step | `ExperimentStep`, `ExperimentStepModel` | One candidate model configuration trained inside an experiment, with its metrics | an epoch |
 | Data set | `DataSetCooker`, `DataSetImporter`, `assets/data_set_*` | Cooked train/val/test fragments of `DURATION` seconds, labelled, with augmentation and features applied | raw recordings |
