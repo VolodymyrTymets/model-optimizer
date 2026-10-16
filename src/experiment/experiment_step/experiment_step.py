@@ -1,5 +1,4 @@
 from src.assets_service.assets_service import AssetsService
-from src.data_set.data_set_cooker import DataSetCooker
 from src.data_set.data_set_importer import DataSetImporter
 from src.database.schema import ExperimentStepModel
 from src.experiment.experiment_step.experiment_step_interface import IExperimentStep
@@ -26,7 +25,6 @@ class ExperimentStep(IExperimentStep):
         self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
         self.experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self.experiment_data_set_details = self.experiment_model_service.get_data_set_details(experiment_id)
-        self.data_set_cooker = DataSetCooker(experiment_id=experiment_id, af_strategy=af_strategy)
         self.data_set_importer = DataSetImporter(experiment_id=experiment_id, af_strategy=af_strategy, duration=self.experiment_data_set_details.duration)
         self._experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id=experiment_id, af_strategy=af_strategy)
 
@@ -44,7 +42,6 @@ class ExperimentStep(IExperimentStep):
         return max(steps, key=lambda x: x.record_accuracy)
 
     def run(self, schema: IModelSchema, epochs: int) -> ExperimentStepModel:
-        self.data_set_cooker.step_prepare(self.experiment_data_set_details.duration, self.experiment_data_set_details.argumentation_types)
         train_ds, val_ds, test_ds, _ = self.data_set_importer.import_data_set()
         step = self._experiment_step_model_service.find(self.experiment_id, schema)
 

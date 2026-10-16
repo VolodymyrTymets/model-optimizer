@@ -32,7 +32,6 @@ labels_colors: _Dict[str, str] = _profile.labels_colors
 ASSETS_PATH = 'assets'
 VERBOSE = True
 EMULATE_MODE = False
-SKIP_FILTER = True
 FRAGMENT_LENGTH = int(sr / (1 / DURATION))
 frame_length = 512
 hop_length = frame_length // 4

@@ -37,7 +37,7 @@ def main() -> None:
         in_path=data_set_path, out_path=data_set_path, sub_sets=sub_sets, labels=labels,
         assets_service=assets_service,
         af_strategy=AFStrategyFactory(sr=sr, frame_length=frame_length, hop_length=hop_length).create_strategy(af_type),
-        localModel=True, model_name=args.model_name, dry_run=args.dry_run)
+        model_name=args.model_name, dry_run=args.dry_run)
     if not data_set_filter.is_filtered() and not args.dry_run:
         print('Filtering the cooked data set in place; this script cannot move files back.')
     is_filtered = data_set_filter.filter(duration=DURATION)
