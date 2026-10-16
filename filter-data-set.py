@@ -8,7 +8,7 @@ from src.utils.audio_features.strategy.af_strategy_factory import AFStrategyFact
 from src.utils.audio_features.types import AFTypes
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Move mislabeled fragments of the cooked data set to the label an exported model predicts.')
     parser.add_argument('model_name', help='folder under assets/models, e.g. model-breath_noise_stimulation-0.5-mfcc')
@@ -17,8 +17,8 @@ def main():
 
     assets_service = AssetsService(experiment_id=None)
     # raises ValueError on a name that is not model-<labels>-<duration>-<af_type>
+    labels_part, duration_part, af_part = assets_service.parse_model_name(args.model_name)
     data_set_path = assets_service.get_data_set_path_for_model(args.model_name)
-    labels_part, duration_part, af_part = args.model_name[len('model-'):].rsplit('-', 2)
 
     # the name carries no task, so a model from another task is caught here by its labels and duration
     expected_labels = '_'.join(sorted(labels))
@@ -28,7 +28,7 @@ def main():
     try:
         af_type = AFTypes[af_part]
     except KeyError:
-        raise ValueError(f'Unknown audio feature type "{af_part}" in model name {args.model_name}')
+        raise ValueError(f'Unknown audio feature type "{af_part}" in model name {args.model_name}') from None
 
     if not os.path.isdir(data_set_path):
         raise FileNotFoundError('Cooked data set not found for this model; run main.py once first to create it')

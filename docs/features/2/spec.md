@@ -32,10 +32,10 @@ Prerequisite for ticket 4 (remove per-step filtering from `main.py`).
 ## Acceptance criteria
 - [x] AC1 Given `python filter-data-set.py <model_name>` with `assets/models/<model_name>` present, then the script
   loads that SavedModel (not `model_<duration>`) and filters `assets/<DATA_SET_NAME>_<labels>-<duration>`.
-- [x] AC2 Given the model's labels, duration or task do not match the active definitions, then it raises
+- [x] AC2 Given the model's labels or duration do not match the active definitions (the model name carries no task, so a wrong task is caught only this way), then it raises
   `ValueError` naming both values before any file is moved.
 - [x] AC3 Given a fragment whose predicted label differs from its folder, then it is moved to the predicted label's
-  folder; `keep`-prefixed and augmented files are never moved.
+  folder; files with `keep` in the name and augmented files are never moved.
 - [x] AC4 Given `--dry-run`, then nothing is moved and no `__filtered__` marker is written; the log shows counts.
 - [x] AC5 Given the data set is already marked `__filtered__`, then the script logs and exits without moving.
 - [x] AC6 Given the model cannot be loaded or its settings cannot be read, then it raises; it never filters with a

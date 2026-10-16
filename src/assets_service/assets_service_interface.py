@@ -27,5 +27,9 @@ class IAssetsService(ABC):
         pass
 
     @abstractmethod
+    def parse_model_name(self, model_name: str) -> tuple[str, str, str]:
+        pass
+
+    @abstractmethod
     def get_data_set_path_for_model(self, model_name: str) -> str:
         pass

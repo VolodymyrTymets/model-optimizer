@@ -31,7 +31,7 @@ class LocalModelLoader:
         self.af_strategy = af_strategy
         self.model_name = model_name
 
-    def _get_af_strategy(self, model, duration: float):
+    def _get_af_strategy(self, model, duration: float) -> Optional[IAFStrategy]:
         # a settings failure must stop the run: filtering with the wrong feature strategy would relabel files
         af_type, model_duration = self.model_parser.parse_settings(model=model)
         if model_duration != duration:
@@ -42,7 +42,7 @@ class LocalModelLoader:
                                      hop_length=hop_length).create_strategy(strategy_type=af_type)
         return None
 
-    def get_model(self, duration: float):
+    def get_model(self, duration: float) -> tuple[tf.Module, Optional[IAFStrategy]]:
         models_path, _ = self.assets_service.get_models_path(self.model_name)
         model_path = self.files.join(models_path, self.model_name)
         if not self.files.is_exist(model_path):
@@ -113,6 +113,10 @@ class DataSetFilter(DataSetFileWorker):
     def __init__(self, in_path: str, out_path: str, sub_sets: list[str], labels: list[str],
                  assets_service: IAssetsService, af_strategy: IAFStrategy, experiment_id: Optional[int] = None,
                  localModel=False, model_name: Optional[str] = None, dry_run: bool = False):
+        if localModel and model_name is None:
+            raise ValueError('model_name is required when localModel is True')
+        if not localModel and experiment_id is None:
+            raise ValueError('experiment_id is required when localModel is False')
         super().__init__(in_path=in_path, out_path=out_path, sub_sets=sub_sets, labels=labels)
         self.assets_service = assets_service
         self.experiment_id = experiment_id
@@ -178,14 +182,21 @@ class DataSetFilter(DataSetFileWorker):
         if clashes:
             raise FileExistsError(f'{clashes} planned move(s) would overwrite an existing file; nothing was moved')
         is_filtered = len(planned) > 0
-        if not self.dry_run:
-            for from_path, out_folder, to_path in planned:
-                self.files.create_folder(out_folder)
-                shutil.move(from_path, to_path)
-
         for (set_name, from_label, to_label), count in sorted(moves.items()):
-            self.logger.log(f'{"would move" if self.dry_run else "moved"} {count} from {set_name}/{from_label} '
+            self.logger.log(f'{"would move" if self.dry_run else "moving"} {count} from {set_name}/{from_label} '
                             f'to {set_name}/{to_label}', color='yellow')
+        if not self.dry_run:
+            done = 0
+            try:
+                for from_path, out_folder, to_path in planned:
+                    self.files.create_folder(out_folder)
+                    shutil.move(from_path, to_path)
+                    done += 1
+            except OSError:
+                # no marker is written, so the half-filtered state must be visible in the log
+                self.logger.log(f'Stopped after moving {done} of {len(planned)} files; the data set is partly filtered',
+                                color='red')
+                raise
         self.logger.log('End filtering', color='blue')
         if not self.dry_run:
             self.finish()
