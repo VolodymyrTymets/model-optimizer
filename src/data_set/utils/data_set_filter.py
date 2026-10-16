@@ -1,3 +1,5 @@
+from typing import Optional
+
 import tensorflow as tf
 import shutil
 from src.data_set.data_set_importer import DataSetImporter
@@ -20,30 +22,34 @@ from src.utils.audio_features.strategy.strategies.strategy_interface import IAFS
 
 class LocalModelLoader:
     def __init__(self, af_strategy: IAFStrategy, assets_service: IAssetsService,
-                 model_parser: ModelResultParser):
+                 model_parser: ModelResultParser, model_name: str):
         self.assets_service = assets_service
         self.files = Files()
         self.logger = Logger('DataSetLocalFilter')
         self.model_parser = model_parser
         self.af_strategy = af_strategy
+        self.model_name = model_name
 
-    def _get_af_strategy(self, model):
-        try:
-            af_type, _ = self.model_parser.parse_settings(model=model)
-            if af_type and af_type.value != self.af_strategy.AFType.value:
-                self.logger.log(f'Changing audio feature strategy to {af_type.value}', color='yellow')
-                return AFStrategyFactory(sr=sr, frame_length=frame_length,
-                                         hop_length=hop_length).create_strategy(strategy_type=af_type)
-        except Exception as e:
-            self.logger.log(f'Error in model settings parsing: {e}', color='red')
+    def _get_af_strategy(self, model, duration: float):
+        # a settings failure must stop the run: filtering with the wrong feature strategy would relabel files
+        af_type, model_duration = self.model_parser.parse_settings(model=model)
+        if model_duration != duration:
+            raise ValueError(f'Model {self.model_name} was exported for duration {model_duration}, expected {duration}')
+        if af_type.value != self.af_strategy.AFType.value:
+            self.logger.log(f'Changing audio feature strategy to {af_type.value}', color='yellow')
+            return AFStrategyFactory(sr=sr, frame_length=frame_length,
+                                     hop_length=hop_length).create_strategy(strategy_type=af_type)
+        return None
 
     def get_model(self, duration: float):
-        model_path = self.files.join(self.assets_service.get_assets_path(), 'models', f'model_{duration}')
+        models_path, _ = self.assets_service.get_models_path(self.model_name)
+        model_path = self.files.join(models_path, self.model_name)
         if not self.files.is_exist(model_path):
-            return None, None
-        model = tf.keras.models.load_model(model_path)
+            raise FileNotFoundError(f'Model folder not found: {model_path}')
+        # the exporter writes a SavedModel with a get_settings signature; Keras 3 load_model rejects that format
+        model = tf.saved_model.load(model_path)
 
-        return model, self._get_af_strategy(model)
+        return model, self._get_af_strategy(model, duration)
 
     def is_filtered(self, db_path: str):
         return self.files.is_exist(self.files.join(db_path, '__filtered__'))
@@ -104,7 +110,8 @@ class InMemoryModelLoader:
 
 class DataSetFilter(DataSetFileWorker):
     def __init__(self, in_path: str, out_path: str, sub_sets: list[str], labels: list[str],
-                 assets_service: IAssetsService, af_strategy: IAFStrategy, experiment_id: int, localModel=False):
+                 assets_service: IAssetsService, af_strategy: IAFStrategy, experiment_id: Optional[int] = None,
+                 localModel=False, model_name: Optional[str] = None):
         super().__init__(in_path=in_path, out_path=out_path, sub_sets=sub_sets, labels=labels)
         self.assets_service = assets_service
         self.experiment_id = experiment_id
@@ -117,7 +124,8 @@ class DataSetFilter(DataSetFileWorker):
         self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self.model_loader = LocalModelLoader(af_strategy=self.af_strategy,
                                              assets_service=self.assets_service,
-                                             model_parser=self.model_parser) if localModel else InMemoryModelLoader(
+                                             model_parser=self.model_parser,
+                                             model_name=model_name) if localModel else InMemoryModelLoader(
             af_strategy=self.af_strategy, assets_service=self.assets_service, experiment_id=self.experiment_id)
 
     def is_filtered(self):
