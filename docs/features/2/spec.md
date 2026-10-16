@@ -43,7 +43,7 @@ Prerequisite for ticket 4 (remove per-step filtering from `main.py`).
 - [x] AC7 Logs carry counts per (set, from-label, to-label) only, never file names or paths under `assets/` (rule G1).
 - [x] AC9 Given a `<set>/<label>` folder is missing, then the script raises naming both and moves nothing.
 - [x] AC10 Given a planned move would overwrite an existing file, then it raises `FileExistsError` and nothing is moved.
-- [x] AC8 `main.py` filtering behaviour is unchanged (in-memory loader path untouched). (checked by reasoning only: `SKIP_FILTER = True`, so `main.py` never reaches `filter()`; not run)
+- [x] AC8 `main.py` is unaffected while `SKIP_FILTER = True`: it never reaches `filter()`. With the flag off, the in-memory loader runs the shared `filter()` changes (folder pre-check, collision guard, count-only logs). Checked by reasoning only, not run (needs Postgres and an experiment).
 
 ## Edge cases
 | Case | Expected behaviour | Decided by |
