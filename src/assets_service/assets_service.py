@@ -37,6 +37,25 @@ class AssetsService(IAssetsService):
         finger_print = self._get_data_set_fingerprint()
         return join(ASSETS_PATH, f'{self.out_data_set_name}_{finger_print}')
 
+    def parse_model_name(self, model_name: str) -> tuple[str, str, str]:
+        # model names are 'model-<labels joined by _>-<duration>-<af_type>' (see _get_model_fingerprint)
+        parts = model_name.rsplit('-', 2)
+        error = ValueError(f"Model name '{model_name}' does not match model-<labels>-<duration>-<af_type>")
+        if not model_name.startswith('model-') or len(parts) != 3:
+            raise error
+        labels, duration, af_type = parts[0][len('model-'):], parts[1], parts[2]
+        try:
+            float(duration)
+        except ValueError:
+            raise error from None
+        if not labels or not af_type:
+            raise error
+        return labels, duration, af_type
+
+    def get_data_set_path_for_model(self, model_name: str) -> str:
+        labels, duration, _ = self.parse_model_name(model_name)
+        return join(ASSETS_PATH, f'{self.out_data_set_name}_{labels}-{duration}')
+
     def get_experiment_path(self):
         return self.experiment_path
 
