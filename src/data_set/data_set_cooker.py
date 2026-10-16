@@ -2,11 +2,11 @@ import shutil
 from os.path import join, exists, getmtime
 
 from src.assets_service.assets_service import AssetsService
-from src.data_set.utils.data_set_filter import DataSetFilter, FILTERED_MARKER
+from src.data_set.utils.data_set_filter import FILTERED_MARKER
 from src.data_set.utils.data_set_splitter import DataSetSplitter
 from src.data_set.utils.data_set_record_generator import DataSetRecordGenerator
 from src.data_set.utils.data_set_transformer import DataSetTransformer
-from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME, SKIP_FILTER
+from src.definitions import labels, sub_sets, EMULATE_MODE, DATA_SET_NAME
 from src.data_set.types import ArgumentationTypes
 from src.utils.audio_features.strategy.strategies.strategy_interface import IAFStrategy
 from src.utils.logger.logger_service import Logger
@@ -27,10 +27,6 @@ class DataSetCooker:
         self.data_set_record_generator = DataSetRecordGenerator(in_path=datasets_path,
                                                                 out_path=self._asset_service.get_validation_records_path(),
                                                                 sub_sets=sub_sets, labels=labels)
-        self.data_set_filter = DataSetFilter(in_path=datasets_path, out_path=datasets_path,
-                                             sub_sets=sub_sets, labels=labels, af_strategy=af_strategy,
-                                             assets_service=self._asset_service, experiment_id=experiment_id)
-
         self.logger = Logger('DataSet')
         self._datasets_path = datasets_path
 
@@ -82,30 +78,12 @@ class DataSetCooker:
             self.data_set_record_generator.generate_test_record(duration=duration, except_sets=['train'],
                                                                 except_labels=[])
 
-    def _filter_data_set(self, duration: float = 0.5):
-        if EMULATE_MODE:
-            return False
-        if SKIP_FILTER:
-            self.logger.log(f'Skipping filter cause of SKIP_FILTER', color='green')
-            return False
-        return self.data_set_filter.filter(duration=duration)
-
-    def step_prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
-        is_filtered = self._filter_data_set(duration)
-        print(f'is_filtered: {is_filtered}')
-        if not is_filtered:
-            return False
-        is_argumeted = self._argument_data_set(argumentation_types=argumentation_types)
-        print(f'is_argumeted: {is_argumeted}')
-        return is_filtered or is_argumeted
-
     def prepare(self, duration: float, argumentation_types: list[ArgumentationTypes]):
         if self._is_filtered():
             self.logger.log(f'Data set is filtered. Keeping it', color='green')
         else:
             self.remove_data_set()
             self._split_data_set(duration)
-        is_filtered = self._filter_data_set(duration)
         self._argument_data_set(argumentation_types=argumentation_types)
         self._generate_records(duration, record_count=VALIDATION_RECORDS_COUNT,
-                               is_need_to_regenerate=is_filtered or self._records_outdated())
+                               is_need_to_regenerate=self._records_outdated())
