@@ -39,3 +39,5 @@ n_mels = 64
 n_mfcc = 64
 sub_sets = ['train', 'test']
 keet_prefix = 'keep'
+# Share of the fragments in every validation record that must be keep-flagged, so record_acc rests on trusted labels.
+KEEP_RECORDS_SHARE: float = 0.3
