@@ -3,14 +3,9 @@ from typing import Optional
 
 import tensorflow as tf
 import shutil
-from src.data_set.data_set_importer import DataSetImporter
 from src.data_set.types import ArgumentationTypes
-from src.experiment.experiment_step.experiment_step_model_cooker import ExperimentStepModelCooker
 from src.utils.files import Files
 
-from src.experiment.models.experiment_model_service import ExperimentModelService
-from src.experiment.models.experiment_step_model_service import ExperimentStepModelService
-from src.model_exporter.model_weights_exporter.model_weights_exporter import ModelWeightsExporter
 
 from src.data_set.utils.data_set_splitter import DataSetFileWorker
 from src.model_validator.model_result_parser.model_result_parser import ModelResultParser
@@ -61,67 +56,11 @@ class LocalModelLoader:
         self.files.create_folder(self.files.join(db_path, FILTERED_MARKER))
 
 
-class InMemoryModelLoader:
-    def __init__(self, experiment_id: int, af_strategy: IAFStrategy, assets_service: IAssetsService, ):
-        self.experiment_id = experiment_id
-        self._experiment_step_model_service = ExperimentStepModelService(Logger('ExperimentStepModelService'))
-        self._model_step = ExperimentStepModelService(Logger('ExperimentStepModelService'))
-
-        self._experiment_step_model_cooker = ExperimentStepModelCooker(experiment_id, af_strategy)
-        self.model_weights_service = ModelWeightsExporter(assets_service)
-        self.af_strategy = af_strategy
-        self.files = Files()
-        self.logger = Logger('DataSetInMemoryFilter')
-
-    def _get_best_step(self):
-        return self._experiment_step_model_service.get_best_step(self.experiment_id)
-
-    def is_filtered(self, db_path: str):
-        best_step = self._get_best_step()
-        if best_step is None:
-            self.logger.log('No best step found', color='red')
-            return False
-        path = self.files.join(db_path, FILTERED_MARKER)
-        if self.files.is_exist(path):
-            if not self.files.is_exist(self.files.join(path, "accuracy.txt")):
-                self.logger.log(f'No accuracy file found for {db_path}', color='red')
-                return False
-            with open(self.files.join(path, "accuracy.txt"), "r", encoding="utf-8") as file:
-                content = file.read()
-                return best_step.accuracy_delta <= float(content.strip())
-        return False
-
-    def finish(self, db_path: str):
-        best_step = self._get_best_step()
-        path = self.files.join(db_path, FILTERED_MARKER)
-        self.files.create_folder(path)
-        with open(self.files.join(path, "accuracy.txt"), "w", encoding="utf-8") as file:
-            file.write(str(best_step.accuracy_delta) + "\n")
-
-    def get_model(self, duration: float):
-        data_set_importer = DataSetImporter(experiment_id=self.experiment_id, duration=duration,
-                                            af_strategy=self.af_strategy)
-        train_ds, val_ds, test_ds, label_names = data_set_importer.import_data_set()
-        best_step = self._get_best_step()
-        if best_step is None:
-            return None, None
-        self.logger.log(f'Loading model from step {best_step.step} with ac {best_step.accuracy_delta}', color='blue')
-        model, _ = self._experiment_step_model_cooker.cook_step_model(step_id=best_step.id,
-                                                                      data_sets=(train_ds, val_ds, test_ds), epochs=100)
-        return model, None
-
-
 class DataSetFilter(DataSetFileWorker):
     def __init__(self, in_path: str, out_path: str, sub_sets: list[str], labels: list[str],
-                 assets_service: IAssetsService, af_strategy: IAFStrategy, experiment_id: Optional[int] = None,
-                 localModel=False, model_name: Optional[str] = None, dry_run: bool = False):
-        if localModel and model_name is None:
-            raise ValueError('model_name is required when localModel is True')
-        if not localModel and experiment_id is None:
-            raise ValueError('experiment_id is required when localModel is False')
+                 assets_service: IAssetsService, af_strategy: IAFStrategy, model_name: str, dry_run: bool = False):
         super().__init__(in_path=in_path, out_path=out_path, sub_sets=sub_sets, labels=labels)
         self.assets_service = assets_service
-        self.experiment_id = experiment_id
         self.af_strategy = af_strategy
         self.model_parser = ModelResultParser(af_strategy=self.af_strategy)
         self.logger = Logger('DataSetFilter')
@@ -129,12 +68,10 @@ class DataSetFilter(DataSetFileWorker):
         self.except_labels = []
         self.dry_run = dry_run
         self.assets_service = assets_service
-        self._experiment_model_service = ExperimentModelService(Logger('ExperimentModelService'))
         self.model_loader = LocalModelLoader(af_strategy=self.af_strategy,
                                              assets_service=self.assets_service,
                                              model_parser=self.model_parser,
-                                             model_name=model_name) if localModel else InMemoryModelLoader(
-            af_strategy=self.af_strategy, assets_service=self.assets_service, experiment_id=self.experiment_id)
+                                             model_name=model_name)
 
     def is_filtered(self):
         return self.model_loader.is_filtered(self.out_path)
