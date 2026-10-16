@@ -9,6 +9,7 @@
 | `main.py` | Entry: grid experiment run (`Experiments.run`) over audio-feature types x augmentations x layer/optimizer choices | no (local script) | maintainer |
 | `train-rare-model.py` | Entry: single hand-built Conv2D model for a rare-class data set; trains, exports plots, validates, labels records | no | maintainer |
 | `export-best-model.py` | Entry: `ModelRestorer.restore_best_step()` — restores the best step from the DB | no | maintainer |
+| `filter-data-set.py` | Entry: `DataSetFilter` with `LocalModelLoader` moves mislabeled fragments of the cooked data set to the label a chosen exported model predicts (`--dry-run` to preview) | no | maintainer |
 | `src/definitions.py` | The one import surface for tunables: shared constants (frame/hop, `ASSETS_PATH`, flags), `FRAGMENT_LENGTH`, and the active task's values; picks the task from `MODEL_OPTIMIZER_TASK` (ADR-006) | no | maintainer |
 | `src/definitions_sound.py`, `src/definitions_emg.py` | Per-task values: `sr`, `DURATION`, `labels`, `labels_colors`, `DATA_SET_NAME`, `DEFAULT_DATABASE_URL`, `VALIDATION_RECORDS_COUNT` | no | maintainer |
 | `.env.example` | Documents `MODEL_OPTIMIZER_TASK`; the real `.env` is git-ignored | no | maintainer |
@@ -53,6 +54,9 @@ Create/lookup experiment → cook data set → import train/val/test → build f
 ### 3. Export best (`export-best-model.py`)
 `ModelRestorer.restore_best_step()` picks the best step from the DB and restores it.
 
+### 4. Filter by model (`filter-data-set.py <model_name>`)
+`<model_name>` is a folder under `assets/models/` (`model-<labels>-<duration>-<af_type>`). `AssetsService.get_data_set_path_for_model` maps it to `assets/<DATA_SET_NAME>_<labels>-<duration>` (no DB) → the script checks labels and duration against `src/definitions.py` → `LocalModelLoader` loads the SavedModel → `DataSetFilter` plans every move, refuses if any would overwrite a file, then moves fragments in place on `train` and `test` and writes `__filtered__`. `keep`-prefixed and augmented files are skipped. Logs carry counts only.
+
 ## External integrations
 | Service | Purpose | Failure mode | Sandbox available? |
 |---------|---------|--------------|--------------------|
@@ -63,5 +67,6 @@ Create/lookup experiment → cook data set → import train/val/test → build f
 - `MODEL_OPTIMIZER_TASK` unset means `sound`: forgetting it on an EMG run silently uses the sound database and `data_set_sound`. An unknown value raises `ValueError` at import.
 - `assets/` fingerprints do not include the model settings; an old cooked data set is reused if labels + duration match.
 - `train-rare-model.py:63` uses `input_shape`, which is not defined anywhere in the file: `build_model` raises `NameError` as written.
+- Filtering by model moves files in place and the script cannot undo it. `DataSetCooker.prepare()` deletes and re-splits the cooked data set at the start of every `main.py` run, so a filtered result lasts only until the next run (ticket 4 deals with this). `test` is filtered too, so validation records, built from `test`, carry the filter model's labels: this can inflate held-out accuracy.
 - Python 3.9 + `numpy 2.0.2` + `tensorflow 2.20` + `keras 3.10` are pinned together; bumping any one is its own PR.
 - Typo'd module names are real import paths (`mode_trainer`, `mode_builder`, `mode_validator_interfcace`, `expirement_summarize_service`); do not "fix" them in a feature PR (rule C1).

@@ -13,6 +13,7 @@ cp .env.example .env                               # then set MODEL_OPTIMIZER_TA
 .venv/bin/python main.py                           # grid experiment
 .venv/bin/python train-rare-model.py               # single model
 .venv/bin/python export-best-model.py              # restore best step from the DB
+.venv/bin/python filter-data-set.py <model_name>   # filter the cooked data set with an exported model; add --dry-run first
 ```
 
 ## Commands
@@ -22,6 +23,8 @@ See the command map in `CLAUDE.md` — that is the canonical list. The repo has 
 - Before a run, choose the task: `MODEL_OPTIMIZER_TASK=emg .venv/bin/python main.py`, or put the line in the repo-root `.env`. A value set in the shell wins over `.env`. The values per task are in `src/definitions_<task>.py`; EMG-hands and speech are not selectable (ADR-006 keeps their labels).
 - Changing `labels` or `DURATION` points the pipeline at a different `assets/data_set_*` folder; the old one is not deleted.
 - Tables are created on `Experiments()` construction (`create_all`); there are no migrations, so a schema change needs a manual DB reset or `ALTER`.
+
+- Filtering (`filter-data-set.py`): run it with `--dry-run` first, it logs counts per set and label and moves nothing. The real run moves files in place with no undo, on `train` and `test` (so validation records inherit the model's labels), and writes `__filtered__`; a second run is skipped while that marker exists. The cooked data set must exist (run `main.py` once) and the next `main.py` run re-splits it, discarding the filtering.
 
 ## Common failures
 | Symptom | Cause | Fix |

@@ -16,6 +16,9 @@
 | Fingerprint | `_get_data_set_fingerprint` | Sorted labels + duration (+ AF type for models) used to name data-set and model folders | a hash |
 | TFLite model | `ModelExporter.export_tflite_model`, `model.tflite` | The float32 flatbuffer copied to the device; returns probabilities only | the SavedModel |
 | Model settings sidecar | `model_settings.json` | `labels`, `af_type`, `duration`, `sample_rate`, `input_shape` for the TFLite model, mirroring `get_settings` | the `get_settings` signature |
+| Filtering | `DataSetFilter`, `filter-data-set.py`, `__filtered__` | Moving a cooked fragment to the label folder a model predicts when that differs from its current folder; the `__filtered__` folder marks a data set as done | augmentation, validation |
+| Keep flag | `keet_prefix` (`'keep'`) | A file-name prefix for a fragment that is certainly in the right label folder; filtering never moves it | |
+| Model name | `AssetsService.get_models_path`, `assets/models/<name>` | `model-<labels joined by _>-<duration>-<af_type>`, the model fingerprint with a `model-` prefix; the argument of `filter-data-set.py` | the data-set folder name |
 | Rare model | `train-rare-model.py`, `assets/rare-model-image` | A single hand-built model for a rare class / image data set, outside the grid search (**to confirm**) | the grid search |
 
 ## Naming rules that follow from the above
